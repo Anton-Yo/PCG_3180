@@ -22,9 +22,14 @@ public class EnemyMovement : MonoBehaviour
         if(this.gameObject.transform.position != player.transform.position)
         {
             moveDir = (player.transform.position - this.gameObject.transform.position).normalized; //calculate direction to move
-            Debug.Log(moveDir);
+            //Debug.Log(moveDir);
             transform.position += moveDir * speed * Time.deltaTime;
         }
 
+    }
+
+    private void OnTriggerEnter2D()
+    {
+        
     }
 }
