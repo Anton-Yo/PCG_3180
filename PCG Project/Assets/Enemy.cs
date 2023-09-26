@@ -32,7 +32,28 @@ public class Enemy : MonoBehaviour
     {
         if(other.gameObject.layer == LayerMask.NameToLayer("Player"))
         {
-            GameManager.Instance.Damage(20);
+            if(!other.gameObject.GetComponent<Player>().Immune)
+            {
+                GameManager.Instance.Damage(20); 
+                other.gameObject.GetComponent<Player>().BeenHit();
+            }
+        }
+
+        if(other.gameObject.layer == LayerMask.NameToLayer("Attack"))
+        {
+            Destroy(this.gameObject);
+        }
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        if(other.gameObject.layer == LayerMask.NameToLayer("Player"))
+        {
+            if(!other.gameObject.GetComponent<Player>().Immune)
+            {
+                GameManager.Instance.Damage(20); 
+                other.gameObject.GetComponent<Player>().BeenHit();
+            }
         }
     }
 }
