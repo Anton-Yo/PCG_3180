@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 
 public class Enemy : MonoBehaviour
 {
@@ -9,10 +11,15 @@ public class Enemy : MonoBehaviour
 
     private float startTimer;
 
+    [SerializeField] private float health;
+
+    [SerializeField] private TMP_Text healthText;
+
     // Start is called before the first frame update
     void Start()
     {
         startTimer = startDelay;
+        healthText.text = "" + health;
     }
 
     // Update is called once per frame
@@ -41,7 +48,7 @@ public class Enemy : MonoBehaviour
 
         if(other.gameObject.layer == LayerMask.NameToLayer("Attack"))
         {
-            Destroy(this.gameObject);
+            GetHit(5);
         }
     }
 
@@ -54,6 +61,22 @@ public class Enemy : MonoBehaviour
                 GameManager.Instance.Damage(20); 
                 other.gameObject.GetComponent<Player>().BeenHit();
             }
+        }
+    }
+
+    public void GetHit(int dmg)
+    {
+        Debug.Log(health);
+        health -= dmg;
+
+
+        if(health <= 0)
+        {
+            Destroy(this.gameObject);
+        }
+        else
+        {
+            healthText.text = "" + health;
         }
     }
 }
