@@ -9,12 +9,6 @@ public class EnemyMovement : MonoBehaviour
 
     private Vector3 moveDir = new Vector3(0,0,0);
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
     // Update is called once per frame
     void Update()
     {
@@ -28,8 +22,11 @@ public class EnemyMovement : MonoBehaviour
 
     }
 
-    private void OnTriggerEnter2D()
+    private void OnTriggerEnter2D(Collider2D other)
     {
-        
+        if(other.gameObject.layer == LayerMask.NameToLayer("Player"))
+        {
+            GameManager.Instance.Damage(20);
+        }
     }
 }

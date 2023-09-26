@@ -6,6 +6,8 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance {get; private set;}
     private int goldAmount;
+    [SerializeField] private int maxHealth;
+    private int playerHealth;
 
     private void Awake()
     {
@@ -21,8 +23,9 @@ public class GameManager : MonoBehaviour
     }
     // Start is called before the first frame update
     void Start()
-    {
-        
+    {   
+        playerHealth = maxHealth;
+        UI.Instance.SetupGameUI(maxHealth, goldAmount);
     }
 
     // Update is called once per frame
@@ -34,5 +37,12 @@ public class GameManager : MonoBehaviour
     public void AddGold(int amount)
     {
         goldAmount += amount;
+        UI.Instance.IncreaseGold(goldAmount);
+    }
+
+    public void Damage(int amount)
+    {
+        playerHealth -= amount;
+        UI.Instance.UpdateHealthBar(playerHealth);
     }
 }
