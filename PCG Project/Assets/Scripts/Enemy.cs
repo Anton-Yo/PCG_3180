@@ -48,7 +48,7 @@ public class Enemy : MonoBehaviour
 
         if(other.gameObject.layer == LayerMask.NameToLayer("Attack"))
         {
-            GetHit(5);
+            GetHit(GameManager.Instance.PlayerDmg);
         }
     }
 
@@ -68,7 +68,6 @@ public class Enemy : MonoBehaviour
     {
         Debug.Log(health);
         health -= dmg;
-
 
         if(health <= 0)
         {

@@ -9,6 +9,14 @@ public class GameManager : MonoBehaviour
     [SerializeField] private int maxHealth;
     private int playerHealth;
 
+    [SerializeField] private Player player;
+
+    private int playerDmg = 1;
+    public int PlayerDmg
+    {
+        get => playerDmg;
+    }
+
     private void Awake()
     {
         if(Instance != null && Instance != this)
@@ -24,6 +32,11 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {   
+        if(player == null)
+        {
+            player = GameObject.Find("Player").GetComponent<Player>();
+        }
+
         playerHealth = maxHealth;
         UI.Instance.SetupGameUI(maxHealth, goldAmount);
     }
@@ -43,6 +56,17 @@ public class GameManager : MonoBehaviour
     public void Damage(int amount)
     {
         playerHealth -= amount;
+        UI.Instance.UpdateHealthBar(playerHealth);
+    }
+
+    public void IncreaseDmg(int amount)
+    {
+        playerDmg += amount;
+    }
+
+    public void IncreaseHealth(int amount)
+    {
+        playerHealth += amount;
         UI.Instance.UpdateHealthBar(playerHealth);
     }
 }
