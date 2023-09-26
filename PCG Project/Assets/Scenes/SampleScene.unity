@@ -479,8 +479,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: -0.0788002, y: 0.5441}
-  m_SizeDelta: {x: 13.6176, y: 13.1117}
+  m_AnchoredPosition: {x: 0.80000305, y: 5.2}
+  m_SizeDelta: {x: 45.6906, y: 43.9932}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &676369477
 MonoBehaviour:
@@ -520,6 +520,36 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 676369475}
   m_CullTransparentMesh: 1
+--- !u!1 &727703040 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1863117513841281971, guid: 57e571e4d30f7bb4ebb3b14149a5e6f4, type: 3}
+  m_PrefabInstance: {fileID: 3241576860154314897}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &727703042 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4334625608417297450, guid: 57e571e4d30f7bb4ebb3b14149a5e6f4, type: 3}
+  m_PrefabInstance: {fileID: 3241576860154314897}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 727703040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b178ea208ee504847904b144a16322dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &727703046
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 727703040}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 47c3e915d2739b74787f671103ea6386, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  startDelay: 0.8
+  enemyScript: {fileID: 727703042}
 --- !u!1 &910582025
 GameObject:
   m_ObjectHideFlags: 0
@@ -702,8 +732,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 52, y: 9}
+  m_AnchoredPosition: {x: -604.3, y: 326.1}
+  m_SizeDelta: {x: 202.5764, y: 35.0613}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1115880973
 MonoBehaviour:
@@ -769,6 +799,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   slider: {fileID: 1115880973}
+  heart: {fileID: 676369477}
 --- !u!1 &1271407511
 GameObject:
   m_ObjectHideFlags: 0
