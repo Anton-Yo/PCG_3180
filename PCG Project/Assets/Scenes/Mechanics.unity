@@ -1363,7 +1363,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7143926508330460198, guid: bd6a8152157224a47830434450a36ea7, type: 3}
       propertyPath: m_MatchWidthOrHeight
-      value: 0
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 7143926508330460200, guid: bd6a8152157224a47830434450a36ea7, type: 3}
       propertyPath: m_Name
