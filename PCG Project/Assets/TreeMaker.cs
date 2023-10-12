@@ -24,6 +24,8 @@ public class TreeMaker : MonoBehaviour
 
     List<Rect> divisions = new List<Rect>();
 
+    List<Color> randomColors = new List<Color>();
+
     // Start is called before the first frame update
     void Start()
     {
@@ -50,39 +52,53 @@ public class TreeMaker : MonoBehaviour
         {
 
         }
-        //Debug.Log(baseRoom);
-        //Debug.Log(leafRoom1);
-        //Debug.Log(baseRoom2);
-        CreateTwoRooms();
+
+        //Make random colours
+
+        for(int i = 0; i < 4; i++)
+        {
+            randomColors.Add(Random.ColorHSV(0f, 1f));
+        }
+
+    
+        CreateTwoRooms(leafRoom1, leafRoom2);
     }
 
     // Update is called once per frame
     void Update()
     {
-       //Debug.Log(baseRoom.size);
-       //Debug.Log(baseRoom);
+
     }
 
-    public void CreateTwoRooms()
+    public void CreateTwoRooms(Rect rect1, Rect rect2)
     {
+        Rect[] rectArr = new Rect[2];
+        rectArr[0] = rect1;
+        rectArr[1] = rect2;
+        for(int i = 0; i < 2; i++) //do twice rn. Probs gonna need to use nodes/recursion tho
+        {
+            divisions.Add(new Rect(rectArr[i].x, rectArr[i].y, rectArr[i].width/2, rectArr[i].height));
+            divisions.Add(new Rect(rectArr[i].x, rectArr[i].y, rectArr[i].width/2, rectArr[i].height));
+        }
+        
         return;
     }
 
     void OnGUI()
     {
-      
-       // EditorGUI.DrawRect(new Rect(leafRoom1.x, leafRoom1.y, leafRoom1.width, leafRoom1.height), Color.green);
-       // EditorGUI.DrawRect(new Rect(leafRoom2.x, leafRoom2.y, leafRoom2.width, leafRoom2.height), Color.yellow);
 
         //Make extra rooms
-        //divisions.ForEach({
-       //     Editor.GUI.DrawRect(new Rect( ))
-        //})
+        int colorIndex = 0;
+        foreach (Rect div in divisions)
+        {
+            EditorGUI.DrawRect(new Rect(div.x, div.y, div.width, div.height), randomColors[colorIndex]);
+            colorIndex++;
+        };
 
-        EditorGUI.DrawRect(new Rect(leafRoom11.x, leafRoom11.y, leafRoom11.width, leafRoom11.height), Color.red);
-        EditorGUI.DrawRect(new Rect(leafRoom12.x, leafRoom12.y, leafRoom11.width, leafRoom12.height), Color.green);
-        EditorGUI.DrawRect(new Rect(leafRoom21.x, leafRoom21.y, leafRoom21.width, leafRoom21.height), Color.blue);
-        EditorGUI.DrawRect(new Rect(leafRoom22.x, leafRoom22.y, leafRoom22.width, leafRoom22.height), Color.yellow);
+        // EditorGUI.DrawRect(new Rect(leafRoom11.x, leafRoom11.y, leafRoom11.width, leafRoom11.height), Color.red);
+        // EditorGUI.DrawRect(new Rect(leafRoom12.x, leafRoom12.y, leafRoom11.width, leafRoom12.height), Color.green);
+        // EditorGUI.DrawRect(new Rect(leafRoom21.x, leafRoom21.y, leafRoom21.width, leafRoom21.height), Color.blue);
+        // EditorGUI.DrawRect(new Rect(leafRoom22.x, leafRoom22.y, leafRoom22.width, leafRoom22.height), Color.yellow);
 
     }
 }
