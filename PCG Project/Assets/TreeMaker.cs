@@ -20,9 +20,14 @@ public class TreeMaker : MonoBehaviour
     private Rect leafRoom22;
 
     public int splitXTimes;
+    private int splitCount;
     public int leafID;
 
-    List<Rect> divisions = new List<Rect>();
+    static public int debugCounter;
+
+    List<Subroom> divisions = new List<Subroom>();
+
+    List<Subroom> rooms = new List<Subroom>();
 
     List<Color> randomColors = new List<Color>();
 
@@ -30,44 +35,82 @@ public class TreeMaker : MonoBehaviour
     void Start()
     {
         baseRoom = new Rect(0, 0, Screen.width, Screen.height);
-        divisions.Add(baseRoom);
-        prevRoom = baseRoom;
-        //leafRoom1 = new Rect(Screen.width / 2, 0, Screen.width / 2, Screen.height);
         
         if (splitH)
         {
             leafRoom1 = new Rect(0, 0, baseRoom.width / 2, baseRoom.height);
             leafRoom2 = new Rect(baseRoom.width / 2, 0, baseRoom.width / 2, baseRoom.height);
 
-            leafRoom11 = new Rect(leafRoom1.x, leafRoom1.y, leafRoom1.width / 2, leafRoom1.height);
-            leafRoom12 = new Rect(leafRoom1.x + leafRoom1.width/2, leafRoom1.y, leafRoom1.width / 2, leafRoom1.height);
-
-            leafRoom21 = new Rect(leafRoom2.x, leafRoom2.y, leafRoom2.width / 2, leafRoom2.height);
-            leafRoom22 = new Rect(leafRoom2.x + leafRoom2.width/2, leafRoom2.y, leafRoom2.width / 2, leafRoom2.height);
-
-            Debug.Log(leafRoom1);
-            Debug.Log(leafRoom2);
+            //Debug.Log(leafRoom1);
+            //Debug.Log(leafRoom2);
         }
         else
         {
 
         }
 
-        //Make random colours
+        Subroom stump = new Subroom(new Rect(0, 0, Screen.width, Screen.height));
+        CreateSubrooms(stump);
+        AddRoomsToList(stump);
 
-        for(int i = 0; i < 4; i++)
+        //Make random colours
+        for(int i = 0; i < rooms.Count; i++)
         {
             randomColors.Add(Random.ColorHSV(0f, 1f));
         }
 
-    
-        CreateTwoRooms(leafRoom1, leafRoom2);
+        foreach (Subroom div in rooms)
+        {
+            Debug.Log(rooms.Count + " it is " + div.divisionRect);
+        };
+
+
+        //CreateTwoRooms(leafRoom1, leafRoom2);
     }
 
-    // Update is called once per frame
-    void Update()
+    
+    public void AddRoomsToList(Subroom stump)
     {
+        foreach (Subroom div in divisions)
+        {
+            if (div.IAmEndLeaf() == true)
+            {
+                rooms.Add(div);
+            }
+        }
+    }
 
+    public void CreateSubrooms(Subroom parentRoom)
+    {
+        if (parentRoom.divisionRect.width > 100)
+        {
+            //Create the subrooms
+            if (Random.Range(0, 1f) < 0.5)
+            {
+                parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
+                parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x + parentRoom.divisionRect.width / 2, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
+            }
+            else
+            {
+                parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
+                parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y + parentRoom.divisionRect.height / 2, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
+            }
+
+            Debug.Log("The left child of " + parentRoom.divisionRect + " is " + parentRoom.leftChild.divisionRect);
+            Debug.Log("The right child of " + parentRoom.divisionRect + " is " + parentRoom.rightChild.divisionRect);
+            splitCount++;
+
+            divisions.Add(parentRoom.leftChild);
+            divisions.Add(parentRoom.rightChild);
+
+            CreateSubrooms(parentRoom.leftChild);
+            CreateSubrooms(parentRoom.rightChild);
+        }
+        else
+        {
+            Debug.Log("The subrooms have finished generating");
+            return;
+        }
     }
 
     public void CreateTwoRooms(Rect rect1, Rect rect2)
@@ -77,11 +120,16 @@ public class TreeMaker : MonoBehaviour
         rectArr[1] = rect2;
         for(int i = 0; i < 2; i++) //do twice rn. Probs gonna need to use nodes/recursion tho
         {
-            divisions.Add(new Rect(rectArr[i].x, rectArr[i].y, rectArr[i].width/2, rectArr[i].height));
-            divisions.Add(new Rect(rectArr[i].x, rectArr[i].y, rectArr[i].width/2, rectArr[i].height));
+           // divisions.Add(new Rect(rectArr[i].x, rectArr[i].y, rectArr[i].width/2, rectArr[i].height));
+            //divisions.Add(new Rect(rectArr[i].x + rectArr[i].width / 2, rectArr[i].y, rectArr[i].width/2, rectArr[i].height));
         }
         
         return;
+    }
+
+    public void Split(Subroom subroom)
+    {
+        Debug.Log("Splitting " + subroom.debugID + " and the rect is " + subroom.divisionRect);
     }
 
     void OnGUI()
@@ -89,9 +137,10 @@ public class TreeMaker : MonoBehaviour
 
         //Make extra rooms
         int colorIndex = 0;
-        foreach (Rect div in divisions)
+        foreach (Subroom div in rooms)
         {
-            EditorGUI.DrawRect(new Rect(div.x, div.y, div.width, div.height), randomColors[colorIndex]);
+            //Debug.Log(div);
+            EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
             colorIndex++;
         };
 
@@ -100,5 +149,26 @@ public class TreeMaker : MonoBehaviour
         // EditorGUI.DrawRect(new Rect(leafRoom21.x, leafRoom21.y, leafRoom21.width, leafRoom21.height), Color.blue);
         // EditorGUI.DrawRect(new Rect(leafRoom22.x, leafRoom22.y, leafRoom22.width, leafRoom22.height), Color.yellow);
 
+    }
+
+    public class Subroom
+    {
+        public Subroom leftChild;
+        public Subroom rightChild;
+        public int debugID;
+
+        public Rect divisionRect;
+
+        public Subroom(Rect baseRect)
+        {
+            divisionRect = baseRect;
+            debugID = debugCounter;
+            debugCounter++;
+        }
+
+        public bool IAmEndLeaf()
+        {
+            return leftChild == null && rightChild == null;
+        }
     }
 }
