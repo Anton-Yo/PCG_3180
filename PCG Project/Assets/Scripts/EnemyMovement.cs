@@ -15,7 +15,7 @@ public class EnemyMovement : MonoBehaviour
     {
         canMove = val;
     }
-
+    
     // Update is called once per frame
     void Update()
     {
