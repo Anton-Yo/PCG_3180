@@ -6,22 +6,21 @@ using UnityEditor;
 public class TreeMaker : MonoBehaviour
 {
 
-    public bool splitH = true;
-    public int width;
-    public int height;
+    private bool splitH = true;
+    public int baseWidth = Screen.width;
+    public int baseHeight = Screen.height;
     private Rect baseRoom;
-    private Rect prevRoom;
-    private Rect leafRoom1;
-    private Rect leafRoom2;
-
-    private Rect leafRoom11;
-    private Rect leafRoom12;
-    private Rect leafRoom21;
-    private Rect leafRoom22;
-
-    public int splitXTimes;
     private int splitCount;
-    public int leafID;
+
+    [Header("Generation Settings")]
+    
+    public int minRoomWidth = 100;
+
+    public int minRoomHeight = 100;
+
+    public int maxRoomWidth = 100;
+
+    public int maxRoomHeight = 100;
 
     static public int debugCounter;
 
@@ -34,22 +33,9 @@ public class TreeMaker : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        baseRoom = new Rect(0, 0, Screen.width, Screen.height);
-        
-        if (splitH)
-        {
-            leafRoom1 = new Rect(0, 0, baseRoom.width / 2, baseRoom.height);
-            leafRoom2 = new Rect(baseRoom.width / 2, 0, baseRoom.width / 2, baseRoom.height);
-
-            //Debug.Log(leafRoom1);
-            //Debug.Log(leafRoom2);
-        }
-        else
-        {
-
-        }
-
-        Subroom stump = new Subroom(new Rect(0, 0, Screen.width, Screen.height));
+        baseHeight = Screen.height;
+        baseWidth = Screen.width;
+        Subroom stump = new Subroom(new Rect(0, 0, baseWidth, baseHeight));
         CreateSubrooms(stump);
         AddRoomsToList(stump);
 
@@ -82,29 +68,44 @@ public class TreeMaker : MonoBehaviour
 
     public void CreateSubrooms(Subroom parentRoom)
     {
-        if (parentRoom.divisionRect.width > 100)
+
+        //  if(parentRoom.divisionRect.width / parentRoom.divisionRect.height >= 1.5f) //1.25f is ratio between sides so that they are less that 1.25x size apart. 
+        // {
+        //     splitH = true;
+        // }
+        // else
+        // {
+        //     splitH = true;
+        // }
+        Debug.Log("COoking");
+        if (parentRoom.divisionRect.width > 100 || parentRoom.divisionRect.height > 100)
         {
             //Create the subrooms
-            if (Random.Range(0, 1f) < 0.5)
+            if (splitH)
             {
                 parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
                 parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x + parentRoom.divisionRect.width / 2, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
             }
             else
             {
-                parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
-                parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y + parentRoom.divisionRect.height / 2, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
+                //parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
+                //parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y + parentRoom.divisionRect.height / 2, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
             }
 
+
+            // if(parentRoom.leftChild != null && parentRoom.rightChild != null)
+            // {
+                
             Debug.Log("The left child of " + parentRoom.divisionRect + " is " + parentRoom.leftChild.divisionRect);
             Debug.Log("The right child of " + parentRoom.divisionRect + " is " + parentRoom.rightChild.divisionRect);
             splitCount++;
-
             divisions.Add(parentRoom.leftChild);
             divisions.Add(parentRoom.rightChild);
 
             CreateSubrooms(parentRoom.leftChild);
             CreateSubrooms(parentRoom.rightChild);
+            //}
+           
         }
         else
         {
