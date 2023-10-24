@@ -33,8 +33,6 @@ public class TreeMaker : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        baseHeight = Screen.height;
-        baseWidth = Screen.width;
         Subroom stump = new Subroom(new Rect(0, 0, baseWidth, baseHeight));
         CreateSubrooms(stump);
         AddRoomsToList(stump);
@@ -69,33 +67,32 @@ public class TreeMaker : MonoBehaviour
     public void CreateSubrooms(Subroom parentRoom)
     {
 
-        //  if(parentRoom.divisionRect.width / parentRoom.divisionRect.height >= 1.5f) //1.25f is ratio between sides so that they are less that 1.25x size apart. 
-        // {
-        //     splitH = true;
-        // }
-        // else
-        // {
-        //     splitH = true;
-        // }
-        Debug.Log("COoking");
-        if (parentRoom.divisionRect.width > 100 || parentRoom.divisionRect.height > 100)
+        if(parentRoom.divisionRect.width / parentRoom.divisionRect.height >= 1.5f) //1.25f is ratio between sides so that they are less that 1.25x size apart. 
         {
+            splitH = true;
+        }
+        else
+        {
+            splitH = false;
+        }
+        Debug.Log("COoking");
+
             //Create the subrooms
-            if (splitH)
+            if (splitH && parentRoom.divisionRect.width > minRoomWidth)
             {
                 parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
                 parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x + parentRoom.divisionRect.width / 2, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
             }
+            else if(!splitH && parentRoom.divisionRect.height > maxRoomHeight)
+            {
+                parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
+                parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y + parentRoom.divisionRect.height / 2, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
+            }
             else
             {
-                //parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
-                //parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y + parentRoom.divisionRect.height / 2, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
+                return;
             }
 
-
-            // if(parentRoom.leftChild != null && parentRoom.rightChild != null)
-            // {
-                
             Debug.Log("The left child of " + parentRoom.divisionRect + " is " + parentRoom.leftChild.divisionRect);
             Debug.Log("The right child of " + parentRoom.divisionRect + " is " + parentRoom.rightChild.divisionRect);
             splitCount++;
@@ -104,14 +101,6 @@ public class TreeMaker : MonoBehaviour
 
             CreateSubrooms(parentRoom.leftChild);
             CreateSubrooms(parentRoom.rightChild);
-            //}
-           
-        }
-        else
-        {
-            Debug.Log("The subrooms have finished generating");
-            return;
-        }
     }
 
     public void CreateTwoRooms(Rect rect1, Rect rect2)

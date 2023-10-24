@@ -251,9 +251,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed1dd624b3e124a44853d46c1539a2e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseWidth: 900
-  baseHeight: 400
-  minRoomWidth: 100
+  baseWidth: 1000
+  baseHeight: 700
+  minRoomWidth: 200
   minRoomHeight: 100
   maxRoomWidth: 100
   maxRoomHeight: 100
