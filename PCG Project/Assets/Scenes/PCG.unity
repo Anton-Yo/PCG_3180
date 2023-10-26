@@ -255,5 +255,7 @@ MonoBehaviour:
   baseHeight: 400
   minRoomWidth: 50
   minRoomHeight: 50
-  maxRoomWidth: 100
-  maxRoomHeight: 50
+  maxRoomWidth: 10
+  maxRoomHeight: 10
+  bigRoomCount: 3
+  bigRoomSizeMultiplier: 2

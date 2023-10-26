@@ -30,6 +30,11 @@ public class TreeMaker : MonoBehaviour
 
     List<Color> randomColors = new List<Color>();
 
+    //Big room stuff
+    public int bigRoomCount = 1;
+    public int bigRoomSizeMultiplier = 4;
+    private int bigRoomCounter = 0;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -63,6 +68,7 @@ public class TreeMaker : MonoBehaviour
         if(Input.GetButtonDown("Fire1"))
         {
             debugCounter = 0;
+            bigRoomCounter = 0;
             RegenerateRooms();
 
 
@@ -87,13 +93,20 @@ public class TreeMaker : MonoBehaviour
 
     public void CreateSubrooms(Subroom parentRoom)
     {
-        
-        if(parentRoom.divisionRect.width/2 < maxRoomWidth && parentRoom.divisionRect.height/2 < maxRoomHeight)
+         
+        if(parentRoom.divisionRect.width/2 < minRoomWidth && parentRoom.divisionRect.height/2 < minRoomHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
         {
-            Debug.Log("Subroom " + parentRoom.debugID + "is a leaf!!");
+            Debug.Log("Subroom " + parentRoom.debugID + " is a leaf!!");
             return;
         }
-       
+
+        //Add a random chance for big rooms up to the total of bigRooms specified by user
+        if(Random.Range(0,1) == 0 && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minRoomWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minRoomHeight && bigRoomCounter < bigRoomCount) 
+        {
+            Debug.Log("Subroom " + parentRoom.debugID + " is a leaf AND A BIG ROOM");
+            bigRoomCounter++;
+            return;
+        }
         //splitH = Random.Range(0f, 1f) > 0.5f;
         if (parentRoom.divisionRect.width / parentRoom.divisionRect.height >= 1.25f) //1.25f is ratio between sides so that they are less that 1.25x size apart. 
         {
@@ -110,12 +123,12 @@ public class TreeMaker : MonoBehaviour
         //Debug.Log("COoking");
 
             //Create the subrooms
-            if (splitH && parentRoom.divisionRect.width > maxRoomWidth)
+            if (splitH)
             {
                 parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
                 parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x + parentRoom.divisionRect.width / 2, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
             }
-            else if(!splitH && parentRoom.divisionRect.height > maxRoomHeight)
+            else if(!splitH)
             {
                 parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
                 parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y + parentRoom.divisionRect.height / 2, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
