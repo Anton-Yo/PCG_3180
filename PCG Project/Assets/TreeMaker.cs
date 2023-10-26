@@ -33,25 +33,41 @@ public class TreeMaker : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Subroom stump = new Subroom(new Rect(0, 0, baseWidth, baseHeight));
-        CreateSubrooms(stump);
-        AddRoomsToList(stump);
-
-        //Make random colours
-        for(int i = 0; i < rooms.Count; i++)
-        {
-            randomColors.Add(Random.ColorHSV(0f, 1f));
-        }
+        RegenerateRooms();
 
         foreach (Subroom div in rooms)
         {
-            Debug.Log(rooms.Count + " it is " + div.divisionRect);
+            Debug.Log(div.debugID + " width is " + div.divisionRect);
+            //Debug.Log(div.debugID + " height is " + div.divisionRect);
         };
 
 
         //CreateTwoRooms(leafRoom1, leafRoom2);
     }
 
+    public void RegenerateRooms()
+    {
+        Subroom stump = new Subroom(new Rect(0, 0, baseWidth, baseHeight));
+        CreateSubrooms(stump);
+        AddRoomsToList(stump);
+
+        //Make random colours
+        for (int i = 0; i < rooms.Count; i++)
+        {
+            randomColors.Add(Random.ColorHSV(0f, 1f));
+        }
+    }
+
+    void Update()
+    {
+        if(Input.GetButtonDown("Fire1"))
+        {
+            debugCounter = 0;
+            RegenerateRooms();
+
+
+        }
+    }
     
     public void AddRoomsToList(Subroom stump)
     {
@@ -61,24 +77,40 @@ public class TreeMaker : MonoBehaviour
             {
                 rooms.Add(div);
             }
+
+            //foreach (Subroom div in rooms)
+            //{
+            //    Debug.Log(rooms.Count + " it is " + div.divisionRect);
+            //};
         }
     }
 
     public void CreateSubrooms(Subroom parentRoom)
     {
-
-        if(parentRoom.divisionRect.width / parentRoom.divisionRect.height >= 1.5f) //1.25f is ratio between sides so that they are less that 1.25x size apart. 
+        
+        if(parentRoom.divisionRect.width/2 < maxRoomWidth && parentRoom.divisionRect.height/2 < maxRoomHeight)
+        {
+            Debug.Log("Subroom " + parentRoom.debugID + "is a leaf!!");
+            return;
+        }
+       
+        //splitH = Random.Range(0f, 1f) > 0.5f;
+        if (parentRoom.divisionRect.width / parentRoom.divisionRect.height >= 1.25f) //1.25f is ratio between sides so that they are less that 1.25x size apart. 
         {
             splitH = true;
         }
-        else
+        else if(parentRoom.divisionRect.height / parentRoom.divisionRect.width >= 1.25f)
         {
             splitH = false;
         }
-        Debug.Log("COoking");
+        else //make it a random choice if the room is basically a square already
+        {
+            splitH = Random.Range(0f, 1f) > 0.5f;
+        }
+        //Debug.Log("COoking");
 
             //Create the subrooms
-            if (splitH && parentRoom.divisionRect.width > minRoomWidth)
+            if (splitH && parentRoom.divisionRect.width > maxRoomWidth)
             {
                 parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
                 parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x + parentRoom.divisionRect.width / 2, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
