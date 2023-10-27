@@ -26,21 +26,37 @@ public class TreeMaker : MonoBehaviour
 
     List<Subroom> divisions = new List<Subroom>();
 
-    List<Subroom> rooms = new List<Subroom>();
+    List<Subroom> subrooms = new List<Subroom>();
+
+    List<Room> rooms = new List<Room>();
 
     List<Color> randomColors = new List<Color>();
 
+    Subroom stump = new Subroom(new Rect(0, 0, Screen.width, Screen.height));
+
+    public bool drawDivs;
+
     //Big room stuff
+    [Header("BigRooms")]
     public int bigRoomCount = 1;
     public int bigRoomSizeMultiplier = 4;
     private int bigRoomCounter = 0;
+    [Header("1/X chance for bigRoomToSpawn")]
+    public int bigRoomSpawnChance = 10;
+
+    [Header("RoomSettings")]
+
+    [Range(0, 1)] public float roomMinWidth = 0.3f;
+    [Range(0, 1)] public float roomMinHeight = 0.3f;
+    [Range(0, 1)] public float roomMaxWidth = 0.95f;
+    [Range(0, 1)] public float roomMaxHeight = 0.95f;
 
     // Start is called before the first frame update
     void Start()
     {
         RegenerateRooms();
 
-        foreach (Subroom div in rooms)
+        foreach (Subroom div in subrooms)
         {
             Debug.Log(div.debugID + " width is " + div.divisionRect);
             //Debug.Log(div.debugID + " height is " + div.divisionRect);
@@ -52,15 +68,47 @@ public class TreeMaker : MonoBehaviour
 
     public void RegenerateRooms()
     {
+        subrooms = new List<Subroom>();
+        divisions = new List<Subroom>();
         Subroom stump = new Subroom(new Rect(0, 0, baseWidth, baseHeight));
         CreateSubrooms(stump);
         AddRoomsToList(stump);
-
+        
         //Make random colours
-        for (int i = 0; i < rooms.Count; i++)
+        for (int i = 0; i < subrooms.Count; i++)
         {
             randomColors.Add(Random.ColorHSV(0f, 1f));
         }
+
+        CreateRoomRooms();
+
+        Debug.Log(rooms.Count);
+    }
+
+    public void CreateRoomRooms()
+    {
+        rooms = new List<Room>();
+        int count = 0;
+        foreach (Subroom div in subrooms)
+        {
+            count++;
+            
+            int bufferW = (int)(div.divisionRect.width - (div.divisionRect.width * roomMaxWidth)); //make a buffer between the maximum width of the room and its parents width;
+            int bufferH = (int)(div.divisionRect.height - (div.divisionRect.height * roomMaxHeight)); //make a buffer between the maximum height of the room and its parents height;
+
+            //TODO Check if minimum set is less than 0/maximum is greater than the room dimensions. Because that will break the code
+
+            int roomWidth = (int)Random.Range(div.divisionRect.width * roomMinWidth, div.divisionRect.width - bufferW); //choose width between minimum specified width. And maximum possible width;
+            int roomHeight = (int)Random.Range(div.divisionRect.height * roomMinHeight, div.divisionRect.height - bufferH); //choose height between minimum specified height and maximum possible height;
+            int roomX = (int)Random.Range(div.divisionRect.x, div.divisionRect.x + (div.divisionRect.width - roomWidth));
+            int roomY = (int)Random.Range(div.divisionRect.y, div.divisionRect.y + (div.divisionRect.height - roomHeight));
+            Debug.Log($"KEY it {div.divisionRect.x} Yeah yeah yeah and the maximum is ran {roomX} lol {roomY}");
+            Rect roomRect = new(roomX, roomY, roomWidth, roomHeight);
+            Room room = new Room(roomRect);
+            rooms.Add(room);
+            Debug.Log(room.rect);
+        }
+  
     }
 
     void Update()
@@ -70,8 +118,11 @@ public class TreeMaker : MonoBehaviour
             debugCounter = 0;
             bigRoomCounter = 0;
             RegenerateRooms();
+        }
 
-
+        if(Input.GetButtonDown("Jump"))
+        {
+            CreateRoomRooms();
         }
     }
     
@@ -81,7 +132,7 @@ public class TreeMaker : MonoBehaviour
         {
             if (div.IAmEndLeaf() == true)
             {
-                rooms.Add(div);
+                subrooms.Add(div);
             }
 
             //foreach (Subroom div in rooms)
@@ -101,7 +152,7 @@ public class TreeMaker : MonoBehaviour
         }
 
         //Add a random chance for big rooms up to the total of bigRooms specified by user
-        if(Random.Range(0,1) == 0 && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minRoomWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minRoomHeight && bigRoomCounter < bigRoomCount) 
+        if (Random.Range(1, bigRoomSpawnChance) == 1 && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minRoomWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minRoomHeight && bigRoomCounter < bigRoomCount) 
         {
             Debug.Log("Subroom " + parentRoom.debugID + " is a leaf AND A BIG ROOM");
             bigRoomCounter++;
@@ -172,18 +223,35 @@ public class TreeMaker : MonoBehaviour
 
         //Make extra rooms
         int colorIndex = 0;
-        foreach (Subroom div in rooms)
+
+        EditorGUI.DrawRect(new Rect(stump.divisionRect.x, stump.divisionRect.y, baseWidth, baseHeight), Color.white);
+        foreach (Subroom div in subrooms)
         {
-            //Debug.Log(div);
-            EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
-            colorIndex++;
+            if (drawDivs)
+            {
+                //Debug.Log(div);
+                EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
+                colorIndex++;
+            }
         };
 
-        // EditorGUI.DrawRect(new Rect(leafRoom11.x, leafRoom11.y, leafRoom11.width, leafRoom11.height), Color.red);
-        // EditorGUI.DrawRect(new Rect(leafRoom12.x, leafRoom12.y, leafRoom11.width, leafRoom12.height), Color.green);
-        // EditorGUI.DrawRect(new Rect(leafRoom21.x, leafRoom21.y, leafRoom21.width, leafRoom21.height), Color.blue);
-        // EditorGUI.DrawRect(new Rect(leafRoom22.x, leafRoom22.y, leafRoom22.width, leafRoom22.height), Color.yellow);
+        colorIndex = 0;
+        foreach(Room room in rooms)
+        {
+            EditorGUI.DrawRect(new Rect(room.rect.x, room.rect.y, room.rect.width, room.rect.height), randomColors[colorIndex]);
+            colorIndex++;
+        }
 
+    }
+
+    public class Room
+    {
+        public Rect rect;
+
+        public Room(Rect rect)
+        {
+            this.rect = rect;
+        }
     }
 
     public class Subroom
