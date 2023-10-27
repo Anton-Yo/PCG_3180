@@ -29,6 +29,7 @@ public class TreeMaker : MonoBehaviour
     List<Subroom> subrooms = new List<Subroom>();
 
     List<Room> rooms = new List<Room>();
+    List<Rect> paths = new List<Rect>();
 
     List<Color> randomColors = new List<Color>();
 
@@ -70,7 +71,9 @@ public class TreeMaker : MonoBehaviour
     {
         subrooms = new List<Subroom>();
         divisions = new List<Subroom>();
+        randomColors = new List<Color>();
         Subroom stump = new Subroom(new Rect(0, 0, baseWidth, baseHeight));
+        divisions.Add(stump);
         CreateSubrooms(stump);
         AddRoomsToList(stump);
         
@@ -102,11 +105,11 @@ public class TreeMaker : MonoBehaviour
             int roomHeight = (int)Random.Range(div.divisionRect.height * roomMinHeight, div.divisionRect.height - bufferH); //choose height between minimum specified height and maximum possible height;
             int roomX = (int)Random.Range(div.divisionRect.x, div.divisionRect.x + (div.divisionRect.width - roomWidth));
             int roomY = (int)Random.Range(div.divisionRect.y, div.divisionRect.y + (div.divisionRect.height - roomHeight));
-            Debug.Log($"KEY it {div.divisionRect.x} Yeah yeah yeah and the maximum is ran {roomX} lol {roomY}");
+            //Debug.Log($"KEY it {div.divisionRect.x} Yeah yeah yeah and the maximum is ran {roomX} lol {roomY}");
             Rect roomRect = new(roomX, roomY, roomWidth, roomHeight);
             Room room = new Room(roomRect);
             rooms.Add(room);
-            Debug.Log(room.rect);
+            //Debug.Log(room.rect);
         }
   
     }
@@ -145,7 +148,7 @@ public class TreeMaker : MonoBehaviour
     public void CreateSubrooms(Subroom parentRoom)
     {
          
-        if(parentRoom.divisionRect.width/2 < minRoomWidth && parentRoom.divisionRect.height/2 < minRoomHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
+        if(parentRoom.divisionRect.width/2 < minRoomWidth || parentRoom.divisionRect.height/2 < minRoomHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
         {
             Debug.Log("Subroom " + parentRoom.debugID + " is a leaf!!");
             return;
@@ -199,18 +202,24 @@ public class TreeMaker : MonoBehaviour
             CreateSubrooms(parentRoom.rightChild);
     }
 
-    public void CreateTwoRooms(Rect rect1, Rect rect2)
+    public void CreatePathwayBetween(Subroom left, Subroom right)
     {
-        Rect[] rectArr = new Rect[2];
-        rectArr[0] = rect1;
-        rectArr[1] = rect2;
-        for(int i = 0; i < 2; i++) //do twice rn. Probs gonna need to use nodes/recursion tho
+        Vector2 lPoint = new Vector2(left.divisionRect.width/2, left.divisionRect.height / 2);
+        Vector2 rPoint = new Vector2(right.divisionRect.width / 2, right.divisionRect.height / 2);
+
+        if (lPoint.x > rPoint.x)
         {
-           // divisions.Add(new Rect(rectArr[i].x, rectArr[i].y, rectArr[i].width/2, rectArr[i].height));
-            //divisions.Add(new Rect(rectArr[i].x + rectArr[i].width / 2, rectArr[i].y, rectArr[i].width/2, rectArr[i].height));
+            Vector2 temp = lPoint;
+            lPoint = rPoint;
+            rPoint = temp;
         }
+
+        int pathW = (int)(lPoint.x - rPoint.x);
+        int pathH = (int)(lPoint.y - lPoint.y);
+
+        //paths.Add(new Rect(lPoint.x, lPoint.y, 1, Math))
+
         
-        return;
     }
 
     public void Split(Subroom subroom)
@@ -267,6 +276,33 @@ public class TreeMaker : MonoBehaviour
             divisionRect = baseRect;
             debugID = debugCounter;
             debugCounter++;
+        }
+
+        public Rect GetRoom()
+        {
+            if(IAmEndLeaf())
+            {
+                return divisionRect;
+            }
+
+            if(leftChild != null)
+            {
+                Rect lroom = leftChild.GetRoom();
+                if (lroom != null)
+                {
+                    return lroom;
+                }
+            }
+
+            if(rightChild != null)
+            {
+                Rect rroom = rightChild.GetRoom();
+                if(rroom != null)
+                {
+                    return rroom;
+                }
+            }
+            return new Rect(-1, -1, 0, 0);
         }
 
         public bool IAmEndLeaf()
