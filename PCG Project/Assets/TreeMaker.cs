@@ -52,11 +52,15 @@ public class TreeMaker : MonoBehaviour
     [Range(0, 1)] public float roomMaxWidth = 0.95f;
     [Range(0, 1)] public float roomMaxHeight = 0.95f;
 
+    [Header("Corridor")]
+    public int corridorWidth;
+
     // Start is called before the first frame update
     void Start()
     {
         RegenerateRooms();
 
+       
         foreach (Subroom div in subrooms)
         {
             Debug.Log(div.debugID + " width is " + div.divisionRect);
@@ -83,12 +87,13 @@ public class TreeMaker : MonoBehaviour
             randomColors.Add(Random.ColorHSV(0f, 1f));
         }
 
-        CreateRoomRooms();
+        CreateRoomInSubrooms();
+        CreatePathwayBetween(stump.leftChild, stump.rightChild);
 
         Debug.Log(rooms.Count);
     }
 
-    public void CreateRoomRooms()
+    public void CreateRoomInSubrooms()
     {
         rooms = new List<Room>();
         int count = 0;
@@ -108,6 +113,8 @@ public class TreeMaker : MonoBehaviour
             //Debug.Log($"KEY it {div.divisionRect.x} Yeah yeah yeah and the maximum is ran {roomX} lol {roomY}");
             Rect roomRect = new(roomX, roomY, roomWidth, roomHeight);
             Room room = new Room(roomRect);
+            Debug.Log($"Inputs {roomRect}");
+            div.containedRoom = room; //make the subroom know what room it has
             rooms.Add(room);
             //Debug.Log(room.rect);
         }
@@ -125,7 +132,7 @@ public class TreeMaker : MonoBehaviour
 
         if(Input.GetButtonDown("Jump"))
         {
-            CreateRoomRooms();
+            CreateRoomInSubrooms();
         }
     }
     
@@ -204,21 +211,41 @@ public class TreeMaker : MonoBehaviour
 
     public void CreatePathwayBetween(Subroom left, Subroom right)
     {
-        Vector2 lPoint = new Vector2(left.divisionRect.width/2, left.divisionRect.height / 2);
-        Vector2 rPoint = new Vector2(right.divisionRect.width / 2, right.divisionRect.height / 2);
+        paths = new List<Rect>();
+        
+        Vector2 lPoint = new Vector2(left.containedRoom.rect.x + left.containedRoom.rect.width/2, right.containedRoom.rect.y + left.containedRoom.rect.height / 2);
+        Vector2 rPoint = new Vector2(right.containedRoom.rect.x + right.containedRoom.rect.width / 2, right.containedRoom.rect.y + right.containedRoom.rect.height / 2);
+        Debug.Log($"INPUTS {lPoint} and {rPoint}");
 
-        if (lPoint.x > rPoint.x)
+        if(lPoint.x > rPoint.x)
         {
             Vector2 temp = lPoint;
             lPoint = rPoint;
             rPoint = temp;
         }
 
-        int pathW = (int)(lPoint.x - rPoint.x);
+        int pathW = (int)(lPoint.x - rPoint.x); //check if paths are 0 apart, a.k.a the rectangle is vertical
         int pathH = (int)(lPoint.y - lPoint.y);
+        float pathDistance = Vector2.Distance(lPoint, rPoint); //find distance between points, and then round it to an int. Adding + 1 to make sure it always reaches the square.
+        Vector2 pointDistance = rPoint - lPoint;
 
-        //paths.Add(new Rect(lPoint.x, lPoint.y, 1, Math))
+        Debug.Log($"Yeah gamer {lPoint.x} aksdasd {lPoint.y} aohsdkj {pathDistance} akskjdhad {corridorWidth}");
+        Rect path = new Rect(0,0,0,0);
+        Debug.Log($" INPUTS {lPoint.x} + {rPoint.x}  + {pathW}");
 
+        float test = -lPoint.x * rPoint.y + lPoint.y * rPoint.x;
+        if(left.splitH) //rooms are vertical calc
+        {
+            Debug.Log("INPUTS making thing vertically");
+            path = new Rect(lPoint.x - corridorWidth, lPoint.y, corridorWidth, pathDistance);
+        }
+        else //rooms are horizontal calc
+        {
+            path = new Rect(lPoint.x, lPoint.y + corridorWidth/2, pathDistance, corridorWidth);
+        }
+      
+        paths.Add(path);
+        Debug.Log($"Key   {path}");
         
     }
 
@@ -251,6 +278,11 @@ public class TreeMaker : MonoBehaviour
             colorIndex++;
         }
 
+        foreach(Rect path in paths)
+        {
+            EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), Color.red);
+        }
+
     }
 
     public class Room
@@ -269,7 +301,11 @@ public class TreeMaker : MonoBehaviour
         public Subroom rightChild;
         public int debugID;
 
+        public Room containedRoom;
+
         public Rect divisionRect;
+
+        public bool splitH;
 
         public Subroom(Rect baseRect)
         {
@@ -282,7 +318,7 @@ public class TreeMaker : MonoBehaviour
         {
             if(IAmEndLeaf())
             {
-                return divisionRect;
+                return containedRoom.rect;
             }
 
             if(leftChild != null)
