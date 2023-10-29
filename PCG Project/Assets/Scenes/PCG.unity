@@ -253,8 +253,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseWidth: 500
   baseHeight: 500
-  minRoomWidth: 250
-  minRoomHeight: 250
+  minRoomWidth: 100
+  minRoomHeight: 100
   maxRoomWidth: 10
   maxRoomHeight: 10
   drawDivs: 0

@@ -188,11 +188,15 @@ public class TreeMaker : MonoBehaviour
             {
                 parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
                 parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x + parentRoom.divisionRect.width / 2, parentRoom.divisionRect.y, parentRoom.divisionRect.width / 2, parentRoom.divisionRect.height));
+                parentRoom.leftChild.splitH = true;
+                parentRoom.rightChild.splitH = true;
             }
             else if(!splitH)
             {
                 parentRoom.leftChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
                 parentRoom.rightChild = new Subroom(new Rect(parentRoom.divisionRect.x, parentRoom.divisionRect.y + parentRoom.divisionRect.height / 2, parentRoom.divisionRect.width, parentRoom.divisionRect.height/2));
+                parentRoom.leftChild.splitH = false;
+                parentRoom.rightChild.splitH = false;
             }
             else
             {
@@ -213,11 +217,18 @@ public class TreeMaker : MonoBehaviour
     {
         paths = new List<Rect>();
         
-        Vector2 lPoint = new Vector2(left.containedRoom.rect.x + left.containedRoom.rect.width/2, right.containedRoom.rect.y + left.containedRoom.rect.height / 2);
+        Vector2 lPoint = new Vector2(left.containedRoom.rect.x + left.containedRoom.rect.width/2, left.containedRoom.rect.y + left.containedRoom.rect.height / 2);
         Vector2 rPoint = new Vector2(right.containedRoom.rect.x + right.containedRoom.rect.width / 2, right.containedRoom.rect.y + right.containedRoom.rect.height / 2);
         Debug.Log($"INPUTS {lPoint} and {rPoint}");
 
-        if(lPoint.x > rPoint.x)
+        if(lPoint.x > rPoint.x && splitH)
+        {
+            Vector2 temp = lPoint;
+            lPoint = rPoint;
+            rPoint = temp;
+        }
+        
+        if(lPoint.y > rPoint.y && !splitH)
         {
             Vector2 temp = lPoint;
             lPoint = rPoint;
@@ -229,19 +240,20 @@ public class TreeMaker : MonoBehaviour
         float pathDistance = Vector2.Distance(lPoint, rPoint); //find distance between points, and then round it to an int. Adding + 1 to make sure it always reaches the square.
         Vector2 pointDistance = rPoint - lPoint;
 
-        Debug.Log($"Yeah gamer {lPoint.x} aksdasd {lPoint.y} aohsdkj {pathDistance} akskjdhad {corridorWidth}");
+        Debug.Log($"Yeah gamer {lPoint.x} aksdasd {lPoint.y} asdad {rPoint.x} + {rPoint.y} aohsdkj {pathDistance} akskjdhad {corridorWidth}");
         Rect path = new Rect(0,0,0,0);
-        Debug.Log($" INPUTS {lPoint.x} + {rPoint.x}  + {pathW}");
+        Debug.Log($" INPUTS  {left.splitH} + {right.splitH} + {lPoint.x} + {rPoint.x}  + {pathW}");
 
         float test = -lPoint.x * rPoint.y + lPoint.y * rPoint.x;
         if(left.splitH) //rooms are vertical calc
         {
             Debug.Log("INPUTS making thing vertically");
-            path = new Rect(lPoint.x - corridorWidth, lPoint.y, corridorWidth, pathDistance);
+            path = new Rect(lPoint.x, lPoint.y + corridorWidth/2, pathDistance, corridorWidth);
         }
         else //rooms are horizontal calc
         {
-            path = new Rect(lPoint.x, lPoint.y + corridorWidth/2, pathDistance, corridorWidth);
+            
+            path = new Rect(lPoint.x - corridorWidth, lPoint.y, corridorWidth, pathDistance);
         }
       
         paths.Add(path);
