@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using Unity.VisualScripting;
 
 public class TreeMaker : MonoBehaviour
 {
@@ -36,6 +37,8 @@ public class TreeMaker : MonoBehaviour
     Subroom stump = new Subroom(new Rect(0, 0, Screen.width, Screen.height));
 
     public bool drawDivs;
+
+    public bool drawPathsOverRooms;
 
     //Big room stuff
     [Header("BigRooms")]
@@ -213,13 +216,19 @@ public class TreeMaker : MonoBehaviour
             CreateSubrooms(parentRoom.rightChild);
     }
 
-    public void CreatePathwayBetween(Subroom left, Subroom right)
+    public void CreatePathwayBetween(Subroom left, Subroom right) 
     {
+
+        //
+        // TODO
+        // Paths can be off centre because of the change in the int/float values used to calc everything. 
+        //
+
         paths = new List<Rect>();
-        
+        float distance = 0;
+        Vector2 startingPoint = Vector2.zero;
         Vector2 lPoint = new Vector2(left.containedRoom.rect.x + left.containedRoom.rect.width/2, left.containedRoom.rect.y + left.containedRoom.rect.height / 2);
         Vector2 rPoint = new Vector2(right.containedRoom.rect.x + right.containedRoom.rect.width / 2, right.containedRoom.rect.y + right.containedRoom.rect.height / 2);
-        Debug.Log($"INPUTS {lPoint} and {rPoint}");
 
         if(lPoint.x > rPoint.x && splitH)
         {
@@ -235,29 +244,69 @@ public class TreeMaker : MonoBehaviour
             rPoint = temp;
         }
 
-        int pathW = (int)(lPoint.x - rPoint.x); //check if paths are 0 apart, a.k.a the rectangle is vertical
-        int pathH = (int)(lPoint.y - lPoint.y);
-        float pathDistance = Vector2.Distance(lPoint, rPoint); //find distance between points, and then round it to an int. Adding + 1 to make sure it always reaches the square.
-        Vector2 pointDistance = rPoint - lPoint;
+        float pathDistance = 0; 
 
-        Debug.Log($"Yeah gamer {lPoint.x} aksdasd {lPoint.y} asdad {rPoint.x} + {rPoint.y} aohsdkj {pathDistance} akskjdhad {corridorWidth}");
-        Rect path = new Rect(0,0,0,0);
-        Debug.Log($" INPUTS  {left.splitH} + {right.splitH} + {lPoint.x} + {rPoint.x}  + {pathW}");
+        Debug.Log($"L Point is {lPoint} and right point is {rPoint} //// pathDistance is {pathDistance} and corridorWidth is {corridorWidth}");
+        Rect pathPt1 = new Rect(0,0,0,0);
+        Rect pathPt2 = new Rect(0,0,0,0);
 
-        float test = -lPoint.x * rPoint.y + lPoint.y * rPoint.x;
-        if(left.splitH) //rooms are vertical calc
+        if(left.splitH) //Make a horizontal path
         {
-            Debug.Log("INPUTS making thing vertically");
-            path = new Rect(lPoint.x, lPoint.y + corridorWidth/2, pathDistance, corridorWidth);
+            pathDistance = rPoint.x - lPoint.x;
+            pathPt1 = new Rect(lPoint.x, lPoint.y + corridorWidth/2, pathDistance, corridorWidth); //directly from midpoint to midpoint
+
+            if(lPoint.y < rPoint.y) //if the path is above the connecting room
+            {
+                Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y - corridorWidth/2); 
+                distance = Vector2.Distance(temp, rPoint);
+                //Debug.Log("Key + " + distance + "   ////   " + temp);
+                startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y + corridorWidth/2);
+                //Debug.Log("Key " + startingPoint);
+                pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
+
+            }
+            else //if the path is below the connecting room
+            {
+                Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y + corridorWidth/2);
+                distance = Vector2.Distance(temp, rPoint);
+                startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y - distance + corridorWidth/2); //got lost somewhere along the way with the maths I was doing. 3*corridorWidth/2 just seems to fix it.
+                pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
+            }
+            //do nothing if the path is spot on already
         }
-        else //rooms are horizontal calc
-        {
+        else //Make a vertical path
+        {   
+            pathDistance = rPoint.y - lPoint.y;
+            pathPt1 = new Rect(lPoint.x - corridorWidth, lPoint.y, corridorWidth, pathDistance); //directly from midpoint to midpoint
             
-            path = new Rect(lPoint.x - corridorWidth, lPoint.y, corridorWidth, pathDistance);
+            //Do a conjoining path just in case;
+            if(lPoint.x < rPoint.x) //if end of vertical path is to the left of the rPoint
+            {
+                //make second path
+                Vector2 temp = new Vector2(lPoint.x - corridorWidth/2, lPoint.y + pathDistance);
+                distance = Vector2.Distance(temp, rPoint);
+                startingPoint = new Vector2(temp.x, temp.y - corridorWidth); 
+                
+                pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
+            }
+            else if(lPoint.x > rPoint.x) //if end of vertical path is to the right of the rPoint;
+            {
+                //make second path
+                Vector2 temp = new Vector2(lPoint.x + corridorWidth/2, lPoint.y + pathDistance);
+                distance = Vector2.Distance(temp, rPoint);
+                startingPoint = new Vector2(temp.x - distance - corridorWidth, temp.y - corridorWidth); 
+                  
+                pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
+            }
+            //do nothing if the path is spot on already
         }
       
-        paths.Add(path);
-        Debug.Log($"Key   {path}");
+        paths.Add(pathPt1);
+        if(pathPt2.height >= corridorWidth || pathPt2.width >= corridorWidth) //only add the path if the path is of a big enough size to matter
+        { 
+            paths.Add(pathPt2);
+        }
+       
         
     }
 
@@ -273,27 +322,48 @@ public class TreeMaker : MonoBehaviour
         int colorIndex = 0;
 
         EditorGUI.DrawRect(new Rect(stump.divisionRect.x, stump.divisionRect.y, baseWidth, baseHeight), Color.white);
-        foreach (Subroom div in subrooms)
-        {
-            if (drawDivs)
+        if(drawDivs){
+            foreach (Subroom div in subrooms)
             {
-                //Debug.Log(div);
-                EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
+            EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
+            colorIndex++; 
+            };
+        }
+       
+
+        if(!drawPathsOverRooms)
+        {
+            foreach(Rect path in paths)
+            {
+                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), Color.red);
+            }
+
+            colorIndex = 0;
+            foreach(Room room in rooms)
+            {
+                EditorGUI.DrawRect(new Rect(room.rect.x, room.rect.y, room.rect.width, room.rect.height), randomColors[colorIndex]);
                 colorIndex++;
             }
-        };
-
-        colorIndex = 0;
-        foreach(Room room in rooms)
+        }
+        else
         {
-            EditorGUI.DrawRect(new Rect(room.rect.x, room.rect.y, room.rect.width, room.rect.height), randomColors[colorIndex]);
-            colorIndex++;
+        
+            colorIndex = 0;
+            foreach(Room room in rooms)
+            {
+                EditorGUI.DrawRect(new Rect(room.rect.x, room.rect.y, room.rect.width, room.rect.height), randomColors[colorIndex]);
+                colorIndex++;
+            }
+
+            foreach(Rect path in paths)
+            {
+                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), Color.red);
+            }
         }
 
-        foreach(Rect path in paths)
-        {
-            EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), Color.red);
-        }
+        
+       
+      
 
     }
 
