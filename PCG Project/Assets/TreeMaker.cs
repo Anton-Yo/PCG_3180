@@ -15,13 +15,13 @@ public class TreeMaker : MonoBehaviour
 
     [Header("Generation Settings")]
     
-    public int minRoomWidth = 100;
+    public int minDivisionWidth = 100;
 
-    public int minRoomHeight = 100;
+    public int minDivisionHeight = 100;
 
-    public int maxRoomWidth = 100;
+    public int maxDivisionWidth = 100;
 
-    public int maxRoomHeight = 100;
+    public int maxDivisionHeight = 100;
 
     static public int debugCounter;
 
@@ -76,10 +76,12 @@ public class TreeMaker : MonoBehaviour
 
     public void RegenerateRooms()
     {
+        debugCounter = 0;
         subrooms = new List<Subroom>();
         divisions = new List<Subroom>();
         randomColors = new List<Color>();
-        Subroom stump = new Subroom(new Rect(0, 0, baseWidth, baseHeight));
+        paths = new List<Rect>();
+        Subroom stump = new Subroom(new Rect(100, 100, baseWidth, baseHeight));
         divisions.Add(stump);
         CreateSubrooms(stump);
         AddRoomsToList(stump);
@@ -91,7 +93,38 @@ public class TreeMaker : MonoBehaviour
         }
 
         CreateRoomInSubrooms();
-        CreatePathwayBetween(stump.leftChild, stump.rightChild);
+        Debug.Log("");
+        //CreatePathwayBetween();
+        foreach(Subroom div in divisions)
+        {
+            Debug.Log(div.divisionRect);
+            if(div.IAmEndLeaf())
+            {
+                Debug.Log($"DebugID is {div.debugID}    End leaf: {div.IAmEndLeaf()}");
+            }
+            else
+            {
+                Debug.Log($"DebugID is {div.debugID}    End leaf: {div.IAmEndLeaf()}     /n left child {div.leftChild}  with id of {div.leftChild.debugID}   /n  right child {div.rightChild} with id of {div.rightChild.debugID}");
+            }
+            
+            if(div.containedRoom == null)
+            {
+                Debug.LogError("contained room is null");
+            }
+            else
+            {
+                Debug.Log($"The contained room is {div.containedRoom.rect}");
+            }
+           
+            if(!div.IAmEndLeaf())
+            {
+                CreatePathwayBetween(div.leftChild, div.rightChild);
+            }
+           
+        }
+        Debug.Log("");
+        Debug.Log(paths.Count);
+        //CreatePathwayBetween(stump.leftChild, stump.rightChild);
 
         Debug.Log(rooms.Count);
     }
@@ -158,14 +191,14 @@ public class TreeMaker : MonoBehaviour
     public void CreateSubrooms(Subroom parentRoom)
     {
          
-        if(parentRoom.divisionRect.width/2 < minRoomWidth || parentRoom.divisionRect.height/2 < minRoomHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
+        if(parentRoom.divisionRect.width/2 < minDivisionWidth || parentRoom.divisionRect.height/2 < minDivisionHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
         {
             Debug.Log("Subroom " + parentRoom.debugID + " is a leaf!!");
             return;
         }
 
         //Add a random chance for big rooms up to the total of bigRooms specified by user
-        if (Random.Range(1, bigRoomSpawnChance) == 1 && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minRoomWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minRoomHeight && bigRoomCounter < bigRoomCount) 
+        if (Random.Range(1, bigRoomSpawnChance) == 1 && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minDivisionWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minDivisionHeight && bigRoomCounter < bigRoomCount) 
         {
             Debug.Log("Subroom " + parentRoom.debugID + " is a leaf AND A BIG ROOM");
             bigRoomCounter++;
@@ -223,12 +256,26 @@ public class TreeMaker : MonoBehaviour
         // TODO
         // Paths can be off centre because of the change in the int/float values used to calc everything. 
         //
-
-        paths = new List<Rect>();
         float distance = 0;
         Vector2 startingPoint = Vector2.zero;
-        Vector2 lPoint = new Vector2(left.containedRoom.rect.x + left.containedRoom.rect.width/2, left.containedRoom.rect.y + left.containedRoom.rect.height / 2);
-        Vector2 rPoint = new Vector2(right.containedRoom.rect.x + right.containedRoom.rect.width / 2, right.containedRoom.rect.y + right.containedRoom.rect.height / 2);
+        Vector2 lPoint;
+        Vector2 rPoint;
+
+        lPoint = new Vector2(left.divisionRect.x + left.divisionRect.width/2, left.divisionRect.y + left.divisionRect.height / 2);
+        rPoint = new Vector2(right.divisionRect.x + right.divisionRect.width/2, right.divisionRect.y + right.divisionRect.height /2);
+
+        //make the paths travel based off the division rect rather than the room rect. Just cos it broken lol
+        // if(left.containedRoom != null) 
+        // {
+           
+        //     //lPoint = new Vector2(left.containedRoom.rect.x + left.containedRoom.rect.width/2, left.containedRoom.rect.y + left.containedRoom.rect.height / 2);
+        //     //rPoint = new Vector2(right.containedRoom.rect.x + right.containedRoom.rect.width / 2, right.containedRoom.rect.y + right.containedRoom.rect.height / 2);
+        // }
+        // else    //if the parent doesn't have a pair of leafs as kids 
+        // {
+            
+           
+        // }
 
         if(lPoint.x > rPoint.x && splitH)
         {
@@ -255,49 +302,52 @@ public class TreeMaker : MonoBehaviour
             pathDistance = rPoint.x - lPoint.x;
             pathPt1 = new Rect(lPoint.x, lPoint.y + corridorWidth/2, pathDistance, corridorWidth); //directly from midpoint to midpoint
 
-            if(lPoint.y < rPoint.y) //if the path is above the connecting room
-            {
-                Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y - corridorWidth/2); 
-                distance = Vector2.Distance(temp, rPoint);
-                //Debug.Log("Key + " + distance + "   ////   " + temp);
-                startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y + corridorWidth/2);
-                //Debug.Log("Key " + startingPoint);
-                pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
+                // if(lPoint.y < rPoint.y) //if the path is above the connecting room
+                // {
+                //     Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y - corridorWidth/2); 
+                //     distance = Vector2.Distance(temp, rPoint);
+                //     //Debug.Log("Key + " + distance + "   ////   " + temp);
+                //     startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y + corridorWidth/2);
+                //     //Debug.Log("Key " + startingPoint);
+                //     pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
 
-            }
-            else //if the path is below the connecting room
-            {
-                Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y + corridorWidth/2);
-                distance = Vector2.Distance(temp, rPoint);
-                startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y - distance + corridorWidth/2); //got lost somewhere along the way with the maths I was doing. 3*corridorWidth/2 just seems to fix it.
-                pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
-            }
+                // }
+                // else //if the path is below the connecting room
+                // {
+                //     Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y + corridorWidth/2);
+                //     distance = Vector2.Distance(temp, rPoint);
+                //     startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y - distance + corridorWidth/2); //got lost somewhere along the way with the maths I was doing. 3*corridorWidth/2 just seems to fix it.
+                //     pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
+                // }
+            
             //do nothing if the path is spot on already
         }
         else //Make a vertical path
         {   
             pathDistance = rPoint.y - lPoint.y;
-            pathPt1 = new Rect(lPoint.x - corridorWidth, lPoint.y, corridorWidth, pathDistance); //directly from midpoint to midpoint
+            pathPt1 = new Rect(lPoint.x - corridorWidth/2, lPoint.y + corridorWidth/2, corridorWidth, pathDistance); //directly from midpoint to midpoint
+            
             
             //Do a conjoining path just in case;
-            if(lPoint.x < rPoint.x) //if end of vertical path is to the left of the rPoint
-            {
-                //make second path
-                Vector2 temp = new Vector2(lPoint.x - corridorWidth/2, lPoint.y + pathDistance);
-                distance = Vector2.Distance(temp, rPoint);
-                startingPoint = new Vector2(temp.x, temp.y - corridorWidth); 
-                
-                pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
-            }
-            else if(lPoint.x > rPoint.x) //if end of vertical path is to the right of the rPoint;
-            {
-                //make second path
-                Vector2 temp = new Vector2(lPoint.x + corridorWidth/2, lPoint.y + pathDistance);
-                distance = Vector2.Distance(temp, rPoint);
-                startingPoint = new Vector2(temp.x - distance - corridorWidth, temp.y - corridorWidth); 
-                  
-                pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
-            }
+                // if(lPoint.x < rPoint.x) //if end of vertical path is to the left of the rPoint
+                // {
+                //     //make second path
+                //     Vector2 temp = new Vector2(lPoint.x - corridorWidth/2, lPoint.y + pathDistance);
+                //     distance = Vector2.Distance(temp, rPoint);
+                //     startingPoint = new Vector2(temp.x, temp.y - corridorWidth); 
+                    
+                //     pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
+                // }
+                // else if(lPoint.x > rPoint.x) //if end of vertical path is to the right of the rPoint;
+                // {
+                //     //make second path
+                //     Vector2 temp = new Vector2(lPoint.x + corridorWidth/2, lPoint.y + pathDistance);
+                //     distance = Vector2.Distance(temp, rPoint);
+                //     startingPoint = new Vector2(temp.x - distance - corridorWidth, temp.y - corridorWidth); 
+                    
+                //     pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
+                // }
+            
             //do nothing if the path is spot on already
         }
       
@@ -319,23 +369,25 @@ public class TreeMaker : MonoBehaviour
     {
 
         //Make extra rooms
-        int colorIndex = 0;
-
+        
         EditorGUI.DrawRect(new Rect(stump.divisionRect.x, stump.divisionRect.y, baseWidth, baseHeight), Color.white);
-        if(drawDivs){
-            foreach (Subroom div in subrooms)
-            {
-            EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
-            colorIndex++; 
-            };
-        }
-       
+        int colorIndex = 0;
 
         if(!drawPathsOverRooms)
         {
             foreach(Rect path in paths)
             {
                 EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), Color.red);
+            }
+            colorIndex = 0;
+
+           
+            if(drawDivs){
+                foreach (Subroom div in subrooms)
+                {
+                    EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
+                    colorIndex++; 
+                };
             }
 
             colorIndex = 0;
@@ -347,7 +399,15 @@ public class TreeMaker : MonoBehaviour
         }
         else
         {
-        
+            colorIndex = 0;
+            if(drawDivs){
+                foreach (Subroom div in subrooms)
+                {
+                    EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
+                    colorIndex++; 
+                };
+            }
+
             colorIndex = 0;
             foreach(Room room in rooms)
             {
@@ -406,19 +466,13 @@ public class TreeMaker : MonoBehaviour
             if(leftChild != null)
             {
                 Rect lroom = leftChild.GetRoom();
-                if (lroom != null)
-                {
-                    return lroom;
-                }
+                return lroom;
             }
 
             if(rightChild != null)
             {
                 Rect rroom = rightChild.GetRoom();
-                if(rroom != null)
-                {
-                    return rroom;
-                }
+                return rroom; 
             }
             return new Rect(-1, -1, 0, 0);
         }
@@ -426,6 +480,11 @@ public class TreeMaker : MonoBehaviour
         public bool IAmEndLeaf()
         {
             return leftChild == null && rightChild == null;
+        }
+
+        public bool ContainsARoom()
+        {
+            return containedRoom != null;
         }
     }
 }
