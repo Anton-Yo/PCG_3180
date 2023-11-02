@@ -253,15 +253,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   baseWidth: 500
   baseHeight: 500
-  minDivisionWidth: 50
+  minDivisionWidth: 100
   minDivisionHeight: 50
-  maxDivisionWidth: 100
-  maxDivisionHeight: 100
   drawDivs: 0
   drawPathsOverRooms: 0
   bigRoomCount: 1
-  bigRoomSizeMultiplier: 8
-  bigRoomSpawnChance: 1
+  bigRoomSizeMultiplier: 4
+  bigRoomSpawnChance: 0.8
+  bigRoomIncrease: 0.05
   roomMinWidth: 0.645
   roomMinHeight: 0.65
   roomMaxWidth: 0.8

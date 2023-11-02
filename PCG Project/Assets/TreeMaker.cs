@@ -23,7 +23,7 @@ public class TreeMaker : MonoBehaviour
 
     List<Subroom> divisions = new List<Subroom>();
 
-    List<Subroom> subrooms = new List<Subroom>();
+    List<Subroom> subrooms = new List<Subroom>(); //rename this thingo
 
     List<Room> rooms = new List<Room>();
     List<Rect> paths = new List<Rect>();
@@ -83,7 +83,6 @@ public class TreeMaker : MonoBehaviour
         Subroom stump = new Subroom(new Rect(100, 100, baseWidth, baseHeight));
         divisions.Add(stump);
         CreateSubrooms(stump);
-        bigRoomSpawnChance = 0;
         AddRoomsToList(stump);
         
         //Make random colours
@@ -91,6 +90,8 @@ public class TreeMaker : MonoBehaviour
         {
             randomColors.Add(Random.ColorHSV(0f, 1f));
         }
+
+        MakeBigRooms();
 
         CreateRoomInSubrooms();
         Debug.Log("");
@@ -171,6 +172,38 @@ public class TreeMaker : MonoBehaviour
             CreateRoomInSubrooms();
         }
     }
+
+    public void MakeBigRooms()
+    {
+        //grab amount of pairs in end rooms
+        //grab end leaf count
+        //divide by 2 to get number of pairs
+        //Go back up by 1 step to get the big room necessary
+        //Loop thru the divisions array and find the ID of the parent of the subrooms... easier said than done
+
+        int numPairs = subroomsCount / 2;
+
+        int pairToChange = Random.Range(0, numPairs);
+        int idOfLeft = subrooms[pairToChange * 2].debugID;
+        int idOfRight = subrooms[pairToChange * 2 + 1].debugID;
+
+        Debug.Log(idOfLeft)
+        Debug.Log(idOfRight);
+
+        for(int i = 0; i < divisions.Count; i++) 
+        {
+            if(!division[i].IAmEndLeaf())
+            {
+                if(divisions[i].leftChild.debugID == idOfLeft && divisions[i].rightChild == idOfRight) //if division is the parent of the selected rooms to be combined
+                {
+                    subrooms.Remove(pairToChange * 2);
+                    subrooms.Remove(pairToChange * 2 + 1);
+                    subrooms.Add(divisions[i]);
+                }
+            }
+        }
+        
+    }
     
     public void AddRoomsToList(Subroom stump)
     {
@@ -194,11 +227,13 @@ public class TreeMaker : MonoBehaviour
         if(parentRoom.divisionRect.width/2 < minDivisionWidth || parentRoom.divisionRect.height/2 < minDivisionHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
         {
             Debug.Log("Subroom " + parentRoom.debugID + " is a leaf!!");
+
+
             return;
         }
 
         //Add a random chance for big rooms up to the total of bigRooms specified by user
-        if (Random.Range(1, bigRoomSpawnChance) == 1 && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minDivisionWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minDivisionHeight && bigRoomCounter < bigRoomCount) 
+        if (Random.Range(0, 1) <= bigRoomSpawnChance && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minDivisionWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minDivisionHeight && bigRoomCounter < bigRoomCount) 
         {
             Debug.Log("Subroom " + parentRoom.debugID + " is a leaf AND A BIG ROOM");
             bigRoomCounter++;
@@ -206,9 +241,10 @@ public class TreeMaker : MonoBehaviour
         }
         else
         {
-            if(bigRoomSpawnChance < 1)
+            if(bigRoomSpawnChance < 1 && bigRoomCounter < bigRoomCount) //if its not big room increase spawn chance for next one so the big room count is equal to amount specified
             {
                 bigRoomSpawnChance += bigRoomIncrease;
+                Debug.Log("BIG " + bigRoomSpawnChance);
             }
         
         }
