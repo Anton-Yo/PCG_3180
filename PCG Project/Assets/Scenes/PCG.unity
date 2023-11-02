@@ -257,13 +257,13 @@ MonoBehaviour:
   minDivisionHeight: 50
   maxDivisionWidth: 100
   maxDivisionHeight: 100
-  drawDivs: 1
-  drawPathsOverRooms: 1
-  bigRoomCount: 0
-  bigRoomSizeMultiplier: 4
-  bigRoomSpawnChance: 10
-  roomMinWidth: 0.5
-  roomMinHeight: 0.5
+  drawDivs: 0
+  drawPathsOverRooms: 0
+  bigRoomCount: 1
+  bigRoomSizeMultiplier: 8
+  bigRoomSpawnChance: 1
+  roomMinWidth: 0.645
+  roomMinHeight: 0.65
   roomMaxWidth: 0.8
   roomMaxHeight: 0.8
-  corridorWidth: 10
+  corridorWidth: 5
