@@ -19,10 +19,6 @@ public class TreeMaker : MonoBehaviour
 
     public int minDivisionHeight = 100;
 
-    public int maxDivisionWidth = 100;
-
-    public int maxDivisionHeight = 100;
-
     static public int debugCounter;
 
     List<Subroom> divisions = new List<Subroom>();
@@ -44,9 +40,11 @@ public class TreeMaker : MonoBehaviour
     [Header("BigRooms")]
     public int bigRoomCount = 1;
     public int bigRoomSizeMultiplier = 4;
+
     private int bigRoomCounter = 0;
     [Header("1/X chance for bigRoomToSpawn")]
-    public int bigRoomSpawnChance = 10;
+    public float bigRoomSpawnChance = 0.1f;
+    public float bigRoomIncrease = 0.1f;
 
     [Header("RoomSettings")]
 
@@ -81,9 +79,11 @@ public class TreeMaker : MonoBehaviour
         divisions = new List<Subroom>();
         randomColors = new List<Color>();
         paths = new List<Rect>();
+        bigRoomSpawnChance = 0;
         Subroom stump = new Subroom(new Rect(100, 100, baseWidth, baseHeight));
         divisions.Add(stump);
         CreateSubrooms(stump);
+        bigRoomSpawnChance = 0;
         AddRoomsToList(stump);
         
         //Make random colours
@@ -203,6 +203,14 @@ public class TreeMaker : MonoBehaviour
             Debug.Log("Subroom " + parentRoom.debugID + " is a leaf AND A BIG ROOM");
             bigRoomCounter++;
             return;
+        }
+        else
+        {
+            if(bigRoomSpawnChance < 1)
+            {
+                bigRoomSpawnChance += bigRoomIncrease;
+            }
+        
         }
         //splitH = Random.Range(0f, 1f) > 0.5f;
         if (parentRoom.divisionRect.width / parentRoom.divisionRect.height >= 1.25f) //1.25f is ratio between sides so that they are less that 1.25x size apart. 
