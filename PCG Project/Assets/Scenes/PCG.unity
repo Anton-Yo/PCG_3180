@@ -251,18 +251,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed1dd624b3e124a44853d46c1539a2e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  startingX: 1
+  startingY: 0
   baseWidth: 500
   baseHeight: 500
   minDivisionWidth: 100
   minDivisionHeight: 50
+  roomMinWidth: 0.515
+  roomMinHeight: 0.6
+  roomMaxWidth: 0.7
+  roomMaxHeight: 0.7
+  corridorWidth: 2
+  bigRoomCount: 2
+  bigRoomSpawnChance: 0.8
   drawDivs: 0
   drawPathsOverRooms: 0
-  bigRoomCount: 1
-  bigRoomSizeMultiplier: 4
-  bigRoomSpawnChance: 0.8
-  bigRoomIncrease: 0.05
-  roomMinWidth: 0.645
-  roomMinHeight: 0.65
-  roomMaxWidth: 0.8
-  roomMaxHeight: 0.8
-  corridorWidth: 5

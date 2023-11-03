@@ -8,18 +8,7 @@ public class TreeMaker : MonoBehaviour
 {
 
     private bool splitH = true;
-    public int baseWidth = Screen.width;
-    public int baseHeight = Screen.height;
-    private Rect baseRoom;
-    private int splitCount;
-
-    [Header("Generation Settings")]
-    
-    public int minDivisionWidth = 100;
-
-    public int minDivisionHeight = 100;
-
-    static public int debugCounter;
+    static private int debugCounter;
 
     List<Subroom> divisions = new List<Subroom>();
 
@@ -31,34 +20,61 @@ public class TreeMaker : MonoBehaviour
     List<Color> randomColors = new List<Color>();
 
     Subroom stump = new Subroom(new Rect(0, 0, Screen.width, Screen.height));
+  
 
-    public bool drawDivs;
+    [Header("Base settings")]
+    public int startingX = 0;
+    public int startingY = 0;
+    public int baseWidth = Screen.width;
+    public int baseHeight = Screen.height;
+    private Rect baseRoom;
+    private int splitCount;
 
-    public bool drawPathsOverRooms;
+    [Header("Generation Settings")]
+    
+    [Header("Minimum division size. A room is generated based on the division sizes")]
+    public int minDivisionWidth = 100;
+
+    public int minDivisionHeight = 100;
 
     //Big room stuff
-    [Header("BigRooms")]
-    public int bigRoomCount = 1;
-    public int bigRoomSizeMultiplier = 4;
 
-    private int bigRoomCounter = 0;
-    [Header("1/X chance for bigRoomToSpawn")]
-    public float bigRoomSpawnChance = 0.1f;
-    public float bigRoomIncrease = 0.1f;
 
-    [Header("RoomSettings")]
+
+    [Header("Room Settings. (%) of division filled by the room")]
 
     [Range(0, 1)] public float roomMinWidth = 0.3f;
     [Range(0, 1)] public float roomMinHeight = 0.3f;
     [Range(0, 1)] public float roomMaxWidth = 0.95f;
     [Range(0, 1)] public float roomMaxHeight = 0.95f;
 
-    [Header("Corridor")]
+    [Header("Corridor Settings")]
     public int corridorWidth;
+
+    [Header("Big room settings: A.k.a Double the size of a normal room")]
+    public int bigRoomCount = 1;
+
+    public enum BigRoomGenerationType
+    {
+        ByCount,
+        ByChance,
+    };
+
+    private int bigRoomCounter = 0;
+    [Header("NON-FUNCTIONAL. Chance for a big room to spawn")]
+    public float bigRoomSpawnChance = 0.1f;
+
+    [Header("Debug Settings")]
+    public bool drawDivs;
+
+    public bool drawPathsOverRooms;
+
 
     // Start is called before the first frame update
     void Start()
     {
+        BigRoomGenerationType bigRoomGenType;
+
         RegenerateRooms();
 
        
@@ -80,20 +96,25 @@ public class TreeMaker : MonoBehaviour
         randomColors = new List<Color>();
         paths = new List<Rect>();
         bigRoomSpawnChance = 0;
-        Subroom stump = new Subroom(new Rect(100, 100, baseWidth, baseHeight));
+        Subroom stump = new Subroom(new Rect(startingX, startingY, baseWidth, baseHeight));
         divisions.Add(stump);
-        CreateSubrooms(stump);
-        AddRoomsToList(stump);
+        CreateDivisions(stump);
+       
         
+     
+        //generate endleaf list and edit that to make big rooms
+        AddRoomsToList(stump);
+        MakeBigRooms();
+
+       
+
+
+        CreateRoomInSubrooms();
         //Make random colours
-        for (int i = 0; i < subrooms.Count; i++)
+        for (int i = 0; i < rooms.Count; i++)
         {
             randomColors.Add(Random.ColorHSV(0f, 1f));
         }
-
-        MakeBigRooms();
-
-        CreateRoomInSubrooms();
         Debug.Log("");
         //CreatePathwayBetween();
         foreach(Subroom div in divisions)
@@ -181,27 +202,51 @@ public class TreeMaker : MonoBehaviour
         //Go back up by 1 step to get the big room necessary
         //Loop thru the divisions array and find the ID of the parent of the subrooms... easier said than done
 
-        int numPairs = subroomsCount / 2;
+        List<Subroom> roomsMadeBig = new List<Subroom>();
 
-        int pairToChange = Random.Range(0, numPairs);
-        int idOfLeft = subrooms[pairToChange * 2].debugID;
-        int idOfRight = subrooms[pairToChange * 2 + 1].debugID;
-
-        Debug.Log(idOfLeft)
-        Debug.Log(idOfRight);
-
-        for(int i = 0; i < divisions.Count; i++) 
+        for (int j = 0; j < bigRoomCount; j++)
         {
-            if(!division[i].IAmEndLeaf())
+            int numPairs = subrooms.Count / 2;
+
+
+            Debug.Log(subrooms.Count);
+            int pairToChange = Random.Range(0, numPairs);
+            int idOfLeft = subrooms[pairToChange * 2].debugID;
+            int idOfRight = subrooms[pairToChange * 2 + 1].debugID;
+
+            Debug.Log(idOfLeft);
+            Debug.Log(idOfRight);
+
+            for (int i = 0; i < divisions.Count; i++)
             {
-                if(divisions[i].leftChild.debugID == idOfLeft && divisions[i].rightChild == idOfRight) //if division is the parent of the selected rooms to be combined
+                if (!divisions[i].IAmEndLeaf())
                 {
-                    subrooms.Remove(pairToChange * 2);
-                    subrooms.Remove(pairToChange * 2 + 1);
-                    subrooms.Add(divisions[i]);
+                    if (divisions[i].leftChild.debugID == idOfLeft && divisions[i].rightChild.debugID == idOfRight) //if division is the parent of the selected rooms to be combined
+                    {
+                        //remove the childs from both divisions and subrooms list, and reinstate parent division as the subroom
+                        divisions.Remove(divisions[i].leftChild);
+                        divisions.Remove(divisions[i].rightChild);
+                        subrooms.Remove(divisions[i].leftChild);
+                        subrooms.Remove(divisions[i].rightChild);
+                        roomsMadeBig.Add(divisions[i]);
+
+                        Debug.Log($"leftID = {divisions[i].leftChild.debugID} and right ID = {divisions[i].rightChild.debugID} and subroom to add is {divisions[i].debugID}");
+
+                        //make the childs null so the path drawer won't draw paths because it won't pass the child null check
+                        divisions[i].leftChild = null;
+                        divisions[i].rightChild = null;
+
+                    }
                 }
             }
         }
+
+        foreach(Subroom bigRoom in roomsMadeBig) //add them on at the end so subrooms is fine
+        {
+            subrooms.Add(bigRoom);
+        }
+
+        Debug.Log(subrooms.Count);
         
     }
     
@@ -221,7 +266,7 @@ public class TreeMaker : MonoBehaviour
         }
     }
 
-    public void CreateSubrooms(Subroom parentRoom)
+    public void CreateDivisions(Subroom parentRoom)
     {
          
         if(parentRoom.divisionRect.width/2 < minDivisionWidth || parentRoom.divisionRect.height/2 < minDivisionHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
@@ -233,21 +278,21 @@ public class TreeMaker : MonoBehaviour
         }
 
         //Add a random chance for big rooms up to the total of bigRooms specified by user
-        if (Random.Range(0, 1) <= bigRoomSpawnChance && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minDivisionWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minDivisionHeight && bigRoomCounter < bigRoomCount) 
-        {
-            Debug.Log("Subroom " + parentRoom.debugID + " is a leaf AND A BIG ROOM");
-            bigRoomCounter++;
-            return;
-        }
-        else
-        {
-            if(bigRoomSpawnChance < 1 && bigRoomCounter < bigRoomCount) //if its not big room increase spawn chance for next one so the big room count is equal to amount specified
-            {
-                bigRoomSpawnChance += bigRoomIncrease;
-                Debug.Log("BIG " + bigRoomSpawnChance);
-            }
+        //if (Random.Range(0, 1) <= bigRoomSpawnChance && parentRoom.divisionRect.width/bigRoomSizeMultiplier < minDivisionWidth && parentRoom.divisionRect.height/bigRoomSizeMultiplier < minDivisionHeight && bigRoomCounter < bigRoomCount) 
+        //{
+            //Debug.Log("Subroom " + parentRoom.debugID + " is a leaf AND A BIG ROOM");
+            //bigRoomCounter++;
+            //return;
+       // }
+        //else
+        //{
+            //if(bigRoomSpawnChance < 1 && bigRoomCounter < bigRoomCount) //if its not big room increase spawn chance for next one so the big room count is equal to amount specified
+            //{
+             //   bigRoomSpawnChance += bigRoomIncrease;
+            //    Debug.Log("BIG " + bigRoomSpawnChance);
+            //}
         
-        }
+        //}
         //splitH = Random.Range(0f, 1f) > 0.5f;
         if (parentRoom.divisionRect.width / parentRoom.divisionRect.height >= 1.25f) //1.25f is ratio between sides so that they are less that 1.25x size apart. 
         {
@@ -289,8 +334,8 @@ public class TreeMaker : MonoBehaviour
             divisions.Add(parentRoom.leftChild);
             divisions.Add(parentRoom.rightChild);
 
-            CreateSubrooms(parentRoom.leftChild);
-            CreateSubrooms(parentRoom.rightChild);
+            CreateDivisions(parentRoom.leftChild);
+            CreateDivisions(parentRoom.rightChild);
     }
 
     public void CreatePathwayBetween(Subroom left, Subroom right) 
@@ -298,7 +343,7 @@ public class TreeMaker : MonoBehaviour
 
         //
         // TODO
-        // Paths can be off centre because of the change in the int/float values used to calc everything. 
+        // Randomise path placement a little bit?
         //
         float distance = 0;
         Vector2 startingPoint = Vector2.zero;
@@ -312,8 +357,8 @@ public class TreeMaker : MonoBehaviour
         // if(left.containedRoom != null) 
         // {
            
-        //     //lPoint = new Vector2(left.containedRoom.rect.x + left.containedRoom.rect.width/2, left.containedRoom.rect.y + left.containedRoom.rect.height / 2);
-        //     //rPoint = new Vector2(right.containedRoom.rect.x + right.containedRoom.rect.width / 2, right.containedRoom.rect.y + right.containedRoom.rect.height / 2);
+            // lPoint = new Vector2(left.containedRoom.rect.x + left.containedRoom.rect.width/2, left.containedRoom.rect.y + left.containedRoom.rect.height / 2);
+            // rPoint = new Vector2(right.containedRoom.rect.x + right.containedRoom.rect.width / 2, right.containedRoom.rect.y + right.containedRoom.rect.height / 2);
         // }
         // else    //if the parent doesn't have a pair of leafs as kids 
         // {
@@ -346,23 +391,23 @@ public class TreeMaker : MonoBehaviour
             pathDistance = rPoint.x - lPoint.x;
             pathPt1 = new Rect(lPoint.x, lPoint.y + corridorWidth/2, pathDistance, corridorWidth); //directly from midpoint to midpoint
 
-                // if(lPoint.y < rPoint.y) //if the path is above the connecting room
-                // {
-                //     Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y - corridorWidth/2); 
-                //     distance = Vector2.Distance(temp, rPoint);
-                //     //Debug.Log("Key + " + distance + "   ////   " + temp);
-                //     startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y + corridorWidth/2);
-                //     //Debug.Log("Key " + startingPoint);
-                //     pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
+                 if(lPoint.y < rPoint.y) //if the path is above the connecting room
+                 {
+                     Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y - corridorWidth/2); 
+                     distance = Vector2.Distance(temp, rPoint);
+                     //Debug.Log("Key + " + distance + "   ////   " + temp);
+                     startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y + corridorWidth/2);
+                     //Debug.Log("Key " + startingPoint);
+                     pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
 
-                // }
-                // else //if the path is below the connecting room
-                // {
-                //     Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y + corridorWidth/2);
-                //     distance = Vector2.Distance(temp, rPoint);
-                //     startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y - distance + corridorWidth/2); //got lost somewhere along the way with the maths I was doing. 3*corridorWidth/2 just seems to fix it.
-                //     pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
-                // }
+                 }
+                 else //if the path is below the connecting room
+                 {
+                     Vector2 temp = new Vector2(lPoint.x + pathDistance, lPoint.y + corridorWidth/2);
+                     distance = Vector2.Distance(temp, rPoint);
+                     startingPoint = new Vector2(temp.x - corridorWidth, lPoint.y - distance + corridorWidth/2); //got lost somewhere along the way with the maths I was doing. 3*corridorWidth/2 just seems to fix it.
+                     pathPt2 = new Rect(startingPoint.x, startingPoint.y, corridorWidth, distance);
+                 }
             
             //do nothing if the path is spot on already
         }
@@ -373,24 +418,24 @@ public class TreeMaker : MonoBehaviour
             
             
             //Do a conjoining path just in case;
-                // if(lPoint.x < rPoint.x) //if end of vertical path is to the left of the rPoint
-                // {
-                //     //make second path
-                //     Vector2 temp = new Vector2(lPoint.x - corridorWidth/2, lPoint.y + pathDistance);
-                //     distance = Vector2.Distance(temp, rPoint);
-                //     startingPoint = new Vector2(temp.x, temp.y - corridorWidth); 
+                 if(lPoint.x < rPoint.x) //if end of vertical path is to the left of the rPoint
+                 {
+                     //make second path
+                     Vector2 temp = new Vector2(lPoint.x - corridorWidth/2, lPoint.y + pathDistance);
+                    distance = Vector2.Distance(temp, rPoint);
+                     startingPoint = new Vector2(temp.x, temp.y - corridorWidth); 
                     
-                //     pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
-                // }
-                // else if(lPoint.x > rPoint.x) //if end of vertical path is to the right of the rPoint;
-                // {
-                //     //make second path
-                //     Vector2 temp = new Vector2(lPoint.x + corridorWidth/2, lPoint.y + pathDistance);
-                //     distance = Vector2.Distance(temp, rPoint);
-                //     startingPoint = new Vector2(temp.x - distance - corridorWidth, temp.y - corridorWidth); 
+                    pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
+                 }
+                 else if(lPoint.x > rPoint.x) //if end of vertical path is to the right of the rPoint;
+                 {
+                     //make second path
+                     Vector2 temp = new Vector2(lPoint.x + corridorWidth/2, lPoint.y + pathDistance);
+                     distance = Vector2.Distance(temp, rPoint);
+                     startingPoint = new Vector2(temp.x - distance - corridorWidth, temp.y - corridorWidth); 
                     
-                //     pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
-                // }
+                     pathPt2 = new Rect(startingPoint.x, startingPoint.y, distance, corridorWidth);
+                 }
             
             //do nothing if the path is spot on already
         }
@@ -411,13 +456,13 @@ public class TreeMaker : MonoBehaviour
 
     void OnGUI()
     {
-
-        //Make extra rooms
-        
-        EditorGUI.DrawRect(new Rect(stump.divisionRect.x, stump.divisionRect.y, baseWidth, baseHeight), Color.white);
+        //Draw the background
+        EditorGUI.DrawRect(new Rect(startingX, startingY, baseWidth, baseHeight), Color.white);
+   
+       
         int colorIndex = 0;
 
-        if(!drawPathsOverRooms)
+        if(!drawPathsOverRooms) //Draw normally, unless debug draw mode is on
         {
             foreach(Rect path in paths)
             {
@@ -429,19 +474,26 @@ public class TreeMaker : MonoBehaviour
             if(drawDivs){
                 foreach (Subroom div in subrooms)
                 {
-                    EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
-                    colorIndex++; 
+                    if(div != null)
+                    {
+                        EditorGUI.DrawRect(new Rect(div.divisionRect.x, div.divisionRect.y, div.divisionRect.width, div.divisionRect.height), randomColors[colorIndex]);
+                        colorIndex++;
+                    }
+                  
                 };
             }
 
             colorIndex = 0;
             foreach(Room room in rooms)
             {
-                EditorGUI.DrawRect(new Rect(room.rect.x, room.rect.y, room.rect.width, room.rect.height), randomColors[colorIndex]);
-                colorIndex++;
+                if (room != null)
+                {
+                    EditorGUI.DrawRect(new Rect(room.rect.x, room.rect.y, room.rect.width, room.rect.height), randomColors[colorIndex]);
+                    colorIndex++;
+                }
             }
         }
-        else
+        else //draw paths over everything
         {
             colorIndex = 0;
             if(drawDivs){
