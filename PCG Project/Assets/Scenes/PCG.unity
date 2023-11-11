@@ -251,7 +251,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed1dd624b3e124a44853d46c1539a2e5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startingX: 1
+  startingX: 0
   startingY: 0
   baseWidth: 500
   baseHeight: 500
@@ -262,6 +262,7 @@ MonoBehaviour:
   roomMaxWidth: 0.7
   roomMaxHeight: 0.7
   corridorWidth: 2
+  corridorColour: {r: 1, g: 0, b: 0, a: 1}
   bigRoomCount: 2
   bigRoomSpawnChance: 0.8
   drawDivs: 0

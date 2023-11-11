@@ -19,7 +19,7 @@ public class TreeMaker : MonoBehaviour
 
     List<Color> randomColors = new List<Color>();
 
-    Subroom stump = new Subroom(new Rect(0, 0, Screen.width, Screen.height));
+    Subroom stump;
   
 
     [Header("Base settings")]
@@ -33,16 +33,18 @@ public class TreeMaker : MonoBehaviour
     [Header("Generation Settings")]
     
     [Header("Minimum division size. A room is generated based on the division sizes")]
-    public int minDivisionWidth = 100;
 
-    public int minDivisionHeight = 100;
+    [Tooltip("All divisions and therefore the rooms inside them, will be greater than this width")] public int minDivisionWidth = 100;
+
+    [Tooltip("All divisions and therefore the rooms inside them, will be greater than this height")] public int minDivisionHeight = 100;
 
     //Big room stuff
 
 
 
-    [Header("Room Settings. (%) of division filled by the room")]
+    [Header("Room Settings"), Header("Room will fill a random range between min% and max% of the divisions width and height."), Space(-5), Header("E.g with min values of 0.4 and max values of 0.8, a room will occupy 40%-80% of the division's space")]
 
+    [Tooltip("Room will always be bigger than X% of the division width")]
     [Range(0, 1)] public float roomMinWidth = 0.3f;
     [Range(0, 1)] public float roomMinHeight = 0.3f;
     [Range(0, 1)] public float roomMaxWidth = 0.95f;
@@ -50,6 +52,8 @@ public class TreeMaker : MonoBehaviour
 
     [Header("Corridor Settings")]
     public int corridorWidth;
+
+    public Color corridorColour;
 
     [Header("Big room settings: A.k.a Double the size of a normal room")]
     public int bigRoomCount = 1;
@@ -73,7 +77,7 @@ public class TreeMaker : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        BigRoomGenerationType bigRoomGenType;
+        //BigRoomGenerationType bigRoomGenType;
 
         RegenerateRooms();
 
@@ -96,18 +100,14 @@ public class TreeMaker : MonoBehaviour
         randomColors = new List<Color>();
         paths = new List<Rect>();
         bigRoomSpawnChance = 0;
-        Subroom stump = new Subroom(new Rect(startingX, startingY, baseWidth, baseHeight));
+        
+        stump = new Subroom(new Rect(startingX, startingY, baseWidth, baseHeight));
         divisions.Add(stump);
         CreateDivisions(stump);
-       
-        
      
         //generate endleaf list and edit that to make big rooms
         AddRoomsToList(stump);
         MakeBigRooms();
-
-       
-
 
         CreateRoomInSubrooms();
         //Make random colours
@@ -449,24 +449,21 @@ public class TreeMaker : MonoBehaviour
         
     }
 
-    public void Split(Subroom subroom)
-    {
-        Debug.Log("Splitting " + subroom.debugID + " and the rect is " + subroom.divisionRect);
-    }
-
     void OnGUI()
     {
         //Draw the background
-        EditorGUI.DrawRect(new Rect(startingX, startingY, baseWidth, baseHeight), Color.white);
-   
        
         int colorIndex = 0;
+        if(stump != null)
+        {
+            EditorGUI.DrawRect(new Rect(stump.divisionRect.x, stump.divisionRect.y, stump.divisionRect.width, stump.divisionRect.height), Color.white);
+        }
 
         if(!drawPathsOverRooms) //Draw normally, unless debug draw mode is on
         {
             foreach(Rect path in paths)
             {
-                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), Color.red);
+                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), corridorColour);
             }
             colorIndex = 0;
 
@@ -513,13 +510,9 @@ public class TreeMaker : MonoBehaviour
 
             foreach(Rect path in paths)
             {
-                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), Color.red);
+                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), corridorColour);
             }
         }
-
-        
-       
-      
 
     }
 
