@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Unity.VisualScripting;
+using TMPro;
 
 public class TreeMaker : MonoBehaviour
 {
@@ -102,6 +103,7 @@ public class TreeMaker : MonoBehaviour
     public GameObject divParent;
     public GameObject pathsParent;
     public GameObject roomsParent;
+    public TMP_Text roomCount;
 
 
 
@@ -565,6 +567,7 @@ public class TreeMaker : MonoBehaviour
             room.transform.localPosition = roomPos;
 
         }
+        roomCount.text = "Number Of Rooms: " + count;
 
         count = 0;
         if(drawDivisions)
