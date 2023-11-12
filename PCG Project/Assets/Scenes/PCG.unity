@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 519420032}
   - component: {fileID: 519420031}
   - component: {fileID: 519420029}
+  - component: {fileID: 519420033}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -175,7 +176,7 @@ Camera:
   near clip plane: 0.3
   far clip plane: 1000
   field of view: 60
-  orthographic: 1
+  orthographic: 0
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:
@@ -207,6 +208,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &519420033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 519420028}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64b52faf998b1f542a7479133b969140, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cameraMoveSpeed: 0
+  cameraZoom: 0
 --- !u!1 &2141788024
 GameObject:
   m_ObjectHideFlags: 0
@@ -262,9 +277,9 @@ MonoBehaviour:
   roomMinHeight: 29.9
   roomMaxWidth: 73.8
   roomMaxHeight: 76.6
-  corridorWidth: 2
-  corridorColour: {r: 1, g: 0, b: 0, a: 1}
-  drawPathsOverRooms: 0
-  bigRoomGenerationType: 1
-  bigRoomCount: 2
+  corridorWidth: 5
+  corridorColour: {r: 0.6415094, g: 0, b: 0, a: 1}
+  drawPathsOverRooms: 1
+  bigRoomGenerationType: 0
+  bigRoomCount: 0
   bigRoomSpawnChance: 0
