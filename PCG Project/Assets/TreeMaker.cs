@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Unity.VisualScripting;
-using Unity.Jobs;
-using System.IO.Compression;
 
 public class TreeMaker : MonoBehaviour
 {
@@ -24,9 +22,9 @@ public class TreeMaker : MonoBehaviour
     Subroom stump;
 
     [Header("This is a generator script that uses a modified binary partitioning algorithm to create a dungeon layout.")]
-    [Space(-5), Header("Tooltips are only visible before running the program, but everything can be changed dynamically during runtime")]
-    [Space(-5), Header("Use <Left-Click> to regenerate the layout, and press <Space> to regenerate just the rooms")]
-    [Space(-5), Header("Everything is drawn using Debug.UI currently, so the base size must fit inside the game view")]
+    [Space(-5), Header("Tooltips are only visible before running the program, but everything can be changed during runtime by regenerating")]
+    [Space(-5), Header("Use <Left-Click> to regenerate the layout, and press <Space> to regenerate just the rooms and paths")]
+    [Space(-5), Header("Other controls: <WASD or Arrow Keys> to move around. <Mouse Wheel> to scroll")]
 
     [Header("Base settings")]
     [Tooltip("X position of the rect containing all of the generated content")] public int startingX = 0;
@@ -36,6 +34,8 @@ public class TreeMaker : MonoBehaviour
     [Tooltip("Height of the rect containing all of the generated content. Larger value results in more rooms (if minimum division size is the same)")] public int baseHeight = Screen.height;
 
     [Tooltip("Colour of the base (background)")] public Color baseColour;
+
+    [Tooltip("Adjust camera move/zoom speed based on width and height of base")] public bool scaleCameraSpeedByBaseSize;
    
 
     [Header("Generation Settings")]
@@ -63,7 +63,7 @@ public class TreeMaker : MonoBehaviour
     [Range(0, 100)] public float roomMaxHeight = 95;
 
     [Header("Corridor Settings")]
-    [Tooltip("Width of the corridor")] public int corridorWidth;
+    [Tooltip("Width of the corridor")] public float corridorWidth;
 
     [Tooltip("Colour of the corridors")] public Color pathColour;
 
@@ -77,11 +77,14 @@ public class TreeMaker : MonoBehaviour
     [Tooltip("Choose whether the generator goes with manual number of big rooms, or % chance for it to spawn.")] public BigRoomGenerationType bigRoomGenerationType;
     [Tooltip("Number of big rooms. A big room combines two child rooms into one room. The sizes may vary based on the size of the children")] public int bigRoomCount = 1;
 
-    private int bigRoomCounter = 0;
     [Tooltip("Chance for a big room to spawn. A big room combines two child rooms into one room. The sizes may vary based on the size of the children")] [Range(0,100)] public float bigRoomSpawnChance = 0.1f;
 
 
-    [Header("Drawing Rectangle Settings")]
+    [Header("Dungeon drawing settings")]
+    [Tooltip("Draws the divisions over the top of everything. Mostly for debug purposes")] public bool drawDivisions;
+
+    [Tooltip("Draw order for 4 dungeon components. Default is divisions, base, paths, rooms")] public List<string> drawOrder = new List<string>();
+
 
     [Header("DebugUI settings")]
     [Tooltip("Draw Debug UI")] public bool drawDebugUI = false;
@@ -91,14 +94,16 @@ public class TreeMaker : MonoBehaviour
     [Tooltip("Paths are visible over rooms and other debug tools")] public bool drawPathsOverRooms;
 
 
-    [Header("Unity Script Connections. CAN IGNORE")]
+
+    [Header("Unity Scripting Stuff. CAN IGNORE")]
     public GameObject rectanglePrefab;
 
+    public GameObject baseParent;
+    public GameObject divParent;
+    public GameObject pathsParent;
     public GameObject roomsParent;
 
-    public GameObject pathsParent;
 
-    public GameObject baseParent;
 
     // Start is called before the first frame update
     void Start()
@@ -208,7 +213,6 @@ public class TreeMaker : MonoBehaviour
         if(Input.GetButtonDown("Fire1"))
         {
             debugCounter = 0;
-            bigRoomCounter = 0;
             RegenerateRooms();
         }
 
@@ -519,8 +523,13 @@ public class TreeMaker : MonoBehaviour
         GameObject background = Instantiate(rectanglePrefab, baseParent.transform);
         background.transform.localScale = new Vector3(baseWidth, baseHeight, 1);
         background.GetComponent<SpriteRenderer>().color = baseColour;
-        background.GetComponent<SpriteRenderer>().sortingOrder = 0;
-        GameObject.Find("Main Camera").GetComponent<CameraMove>().baseGenerated((int)(baseWidth + baseHeight)/2);
+        background.GetComponent<SpriteRenderer>().sortingOrder = drawOrder.IndexOf("base");
+        background.name = "base rectangle";
+        if(scaleCameraSpeedByBaseSize)
+        {
+            GameObject.Find("Main Camera").GetComponent<CameraMove>().baseGenerated((int)(baseWidth + baseHeight)/2);
+        }
+      
         Vector3 BGPos = background.transform.position;
         BGPos.x += baseWidth/2;
         BGPos.y -= baseHeight/2;
@@ -533,44 +542,50 @@ public class TreeMaker : MonoBehaviour
             GameObject path = Instantiate(rectanglePrefab, pathsParent.transform);
             path.transform.localScale = new Vector3(paths[i].width, paths[i].height, 1);
             path.GetComponent<SpriteRenderer>().color = pathColour;
-            path.GetComponent<SpriteRenderer>().sortingOrder = 1;
+            path.GetComponent<SpriteRenderer>().sortingOrder = drawOrder.IndexOf("paths");
             Vector3 pathPos = path.transform.localPosition;
-            pathPos.x = paths[i].x + paths[i].width/2;;
-            pathPos.y = -paths[i].y - paths[i].height/2;
+            pathPos.x = paths[i].x + paths[i].width/2 - startingX;
+            pathPos.y = -paths[i].y - paths[i].height/2 + startingY;
             path.transform.localPosition = pathPos;
         }  
-    
+
+        int count = 0;
         for(int j = 0; j < rooms.Count; j++)
         {
-            //Debug.Log(subrooms[j].divisionRect);
+            //Debug.Log(rooms[j].divisionRect);
             GameObject room = Instantiate(rectanglePrefab, roomsParent.transform);
             room.transform.localScale = new Vector3(rooms[j].rect.width, rooms[j].rect.height, 1);
+            room.name = "Room " + count;
+            count++;
             room.GetComponent<SpriteRenderer>().color = randomColors[j];
-            room.GetComponent<SpriteRenderer>().sortingOrder = 2;
+            room.GetComponent<SpriteRenderer>().sortingOrder = drawOrder.IndexOf("rooms");
             Vector3 roomPos = room.transform.localPosition;
-            roomPos.x = rooms[j].rect.x + rooms[j].rect.width/2;
-            //roomPos.x = subrooms[j].divisionRect.width/2;
-            roomPos.y = -rooms[j].rect.y - rooms[j].rect.height/2;
-            //subrooms[j].divisionRect.height/2;
+            roomPos.x = rooms[j].rect.x + rooms[j].rect.width/2 - startingX;
+            roomPos.y = -rooms[j].rect.y - rooms[j].rect.height/2 + startingY;
             room.transform.localPosition = roomPos;
 
         }
 
-        // for(int j = 0; j < subrooms.Count; j++)
-        // {
-        //     Debug.Log(subrooms[j].divisionRect);
-        //     GameObject subroom = Instantiate(rectanglePrefab, roomsParent.transform);
-        //     subroom.transform.localScale = new Vector3(subrooms[j].divisionRect.width, subrooms[j].divisionRect.height, 1);
-        //     subroom.GetComponent<SpriteRenderer>().color = randomColors[j];
-        //     subroom.GetComponent<SpriteRenderer>().sortingOrder = 3;
-        //     Vector3 roomPos = subroom.transform.localPosition;
-        //     roomPos.x = subrooms[j].divisionRect.x + subrooms[j].divisionRect.width/2;
-        //     //roomPos.x = subrooms[j].divisionRect.width/2;
-        //     roomPos.y = -subrooms[j].divisionRect.y - subrooms[j].divisionRect.height/2;
-        //     //subrooms[j].divisionRect.height/2;
-        //     subroom.transform.localPosition = roomPos;
+        count = 0;
+        if(drawDivisions)
+        {
+            for(int k = 0; k < subrooms.Count; k++)
+            {
+                //Debug.Log(subrooms[k].divisionRect);
+                GameObject subroom = Instantiate(rectanglePrefab, roomsParent.transform);
+                subroom.transform.localScale = new Vector3(subrooms[k].divisionRect.width, subrooms[k].divisionRect.height, 1);
+                subroom.name = "Division " + count;
+                count++;
+                subroom.GetComponent<SpriteRenderer>().color = randomColors[k];
+                subroom.GetComponent<SpriteRenderer>().sortingOrder = drawOrder.IndexOf("divisions");
+                Vector3 roomPos = subroom.transform.localPosition;
+                roomPos.x = subrooms[k].divisionRect.x + subrooms[k].divisionRect.width / 2 - startingX;
+                roomPos.y = -subrooms[k].divisionRect.y - subrooms[k].divisionRect.height / 2 + startingY;
+                subroom.transform.localPosition = roomPos;
 
-        // }
+            }
+        }
+        
 
     }
 

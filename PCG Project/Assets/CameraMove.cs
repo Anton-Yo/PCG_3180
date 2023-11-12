@@ -5,9 +5,9 @@ using UnityEngine;
 public class CameraMove : MonoBehaviour
 {
 
-    [SerializeField] private int cameraMoveSpeed;
+    public int cameraMoveSpeed;
 
-    [SerializeField] private int cameraZoomSpeed;
+    public int cameraZoomSpeed;
 
     [SerializeField] private Camera camera;
     
