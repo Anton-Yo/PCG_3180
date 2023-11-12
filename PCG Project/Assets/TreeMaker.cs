@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using Unity.VisualScripting;
+using Unity.Jobs;
+using System.IO.Compression;
 
 public class TreeMaker : MonoBehaviour
 {
@@ -20,43 +22,46 @@ public class TreeMaker : MonoBehaviour
     List<Color> randomColors = new List<Color>();
 
     Subroom stump;
-  
 
     [Header("Base settings")]
-    public int startingX = 0;
-    public int startingY = 0;
-    public int baseWidth = Screen.width;
+    [Tooltip("X position of the rect containing all of the generated content")] public int startingX = 0;
+    [Tooltip("Y position of the rect containing all of the generated content")] public int startingY = 0;
+    [Tooltip("Width of the rect containing all of the generated content. Larger value results in more rooms (if minimum division size is the same)")] public int baseWidth = Screen.width;
+
+    [Tooltip("Height of the rect containing all of the generated content. Larger value results in more rooms (if minimum division size is the same)")]
     public int baseHeight = Screen.height;
-    private Rect baseRoom;
-    private int splitCount;
 
     [Header("Generation Settings")]
     
     [Header("Minimum division size. A room is generated based on the division sizes")]
 
+    [Tooltip("Will show the divisions a.k.a the room's parent rather than the rooms")] public bool drawDivs;
     [Tooltip("All divisions and therefore the rooms inside them, will be greater than this width")] public int minDivisionWidth = 100;
 
     [Tooltip("All divisions and therefore the rooms inside them, will be greater than this height")] public int minDivisionHeight = 100;
 
-    //Big room stuff
 
+    [Header("Room Settings"), Header("Room will fill a random range between min% and max% of the divisions width and height."), Space(-5), Header("E.g with min values of 40 and max values of 80, a room will occupy 40%-80% of the division's space")]
+    [Header("Max will always be enforced, it overrules minimum values")]
 
+    [Tooltip("Room will always be bigger than X% of the division's width. As long as min < max")]
+    [Range(0, 100)] public float roomMinWidth = 30;
 
-    [Header("Room Settings"), Header("Room will fill a random range between min% and max% of the divisions width and height."), Space(-5), Header("E.g with min values of 0.4 and max values of 0.8, a room will occupy 40%-80% of the division's space")]
+    [Tooltip("Room will always be bigger than X% of the division's height. As long as min < max")]
+    [Range(0, 100)] public float roomMinHeight = 30;
 
-    [Tooltip("Room will always be bigger than X% of the division width")]
-    [Range(0, 1)] public float roomMinWidth = 0.3f;
-    [Range(0, 1)] public float roomMinHeight = 0.3f;
-    [Range(0, 1)] public float roomMaxWidth = 0.95f;
-    [Range(0, 1)] public float roomMaxHeight = 0.95f;
+    [Tooltip("Room will always be smaller than X% of the division's width.")]
+    [Range(0, 100)] public float roomMaxWidth = 95;
+
+    [Tooltip("Room will always be smaller than X% of the division's height.")]
+    [Range(0, 100)] public float roomMaxHeight = 95;
 
     [Header("Corridor Settings")]
-    public int corridorWidth;
+    [Tooltip("Width of the corridor")] public int corridorWidth;
 
-    public Color corridorColour;
+    [Tooltip("Colour of the corridors")] public Color corridorColour;
 
-    [Header("Big room settings: A.k.a Double the size of a normal room")]
-    public int bigRoomCount = 1;
+    [Tooltip("Paths are visible over rooms and other debug tools")] public bool drawPathsOverRooms;
 
     public enum BigRoomGenerationType
     {
@@ -64,15 +69,12 @@ public class TreeMaker : MonoBehaviour
         ByChance,
     };
 
+    [Header("Big room settings: A.k.a Double the size of a normal room")]
+    [Tooltip("Choose whether the generator goes with manual number of big rooms, or % chance for it to spawn.")] public BigRoomGenerationType bigRoomGenerationType;
+    [Tooltip("Number of big rooms. A big room combines two child rooms into one room. The sizes may vary based on the size of the children")] public int bigRoomCount = 1;
+
     private int bigRoomCounter = 0;
-    [Header("NON-FUNCTIONAL. Chance for a big room to spawn")]
-    public float bigRoomSpawnChance = 0.1f;
-
-    [Header("Debug Settings")]
-    public bool drawDivs;
-
-    public bool drawPathsOverRooms;
-
+    [Tooltip("Chance for a big room to spawn. A big room combines two child rooms into one room. The sizes may vary based on the size of the children")] [Range(0,100)] public float bigRoomSpawnChance = 0.1f;
 
     // Start is called before the first frame update
     void Start()
@@ -84,7 +86,7 @@ public class TreeMaker : MonoBehaviour
        
         foreach (Subroom div in subrooms)
         {
-            Debug.Log(div.debugID + " width is " + div.divisionRect);
+            //Debug.Log(div.debugID + " width is " + div.divisionRect);
             //Debug.Log(div.debugID + " height is " + div.divisionRect);
         };
 
@@ -99,7 +101,6 @@ public class TreeMaker : MonoBehaviour
         divisions = new List<Subroom>();
         randomColors = new List<Color>();
         paths = new List<Rect>();
-        bigRoomSpawnChance = 0;
         
         stump = new Subroom(new Rect(startingX, startingY, baseWidth, baseHeight));
         divisions.Add(stump);
@@ -115,28 +116,28 @@ public class TreeMaker : MonoBehaviour
         {
             randomColors.Add(Random.ColorHSV(0f, 1f));
         }
-        Debug.Log("");
+        //Debug.Log("");
         //CreatePathwayBetween();
         foreach(Subroom div in divisions)
         {
-            Debug.Log(div.divisionRect);
-            if(div.IAmEndLeaf())
-            {
-                Debug.Log($"DebugID is {div.debugID}    End leaf: {div.IAmEndLeaf()}");
-            }
-            else
-            {
-                Debug.Log($"DebugID is {div.debugID}    End leaf: {div.IAmEndLeaf()}     /n left child {div.leftChild}  with id of {div.leftChild.debugID}   /n  right child {div.rightChild} with id of {div.rightChild.debugID}");
-            }
+            //Debug.Log(div.divisionRect);
+            // if(div.IAmEndLeaf())
+            // {
+            //     Debug.Log($"DebugID is {div.debugID}    End leaf: {div.IAmEndLeaf()}");
+            // }
+            // else
+            // {
+            //     Debug.Log($"DebugID is {div.debugID}    End leaf: {div.IAmEndLeaf()}     /n left child {div.leftChild}  with id of {div.leftChild.debugID}   /n  right child {div.rightChild} with id of {div.rightChild.debugID}");
+            // }
             
-            if(div.containedRoom == null)
-            {
-                Debug.LogError("contained room is null");
-            }
-            else
-            {
-                Debug.Log($"The contained room is {div.containedRoom.rect}");
-            }
+            // if(div.containedRoom == null)
+            // {
+            //     Debug.LogError("contained room is null");
+            // }
+            // else
+            // {
+            //     Debug.Log($"The contained room is {div.containedRoom.rect}");
+            // }
            
             if(!div.IAmEndLeaf())
             {
@@ -144,11 +145,11 @@ public class TreeMaker : MonoBehaviour
             }
            
         }
-        Debug.Log("");
-        Debug.Log(paths.Count);
+       // Debug.Log("");
+        //Debug.Log(paths.Count);
         //CreatePathwayBetween(stump.leftChild, stump.rightChild);
 
-        Debug.Log(rooms.Count);
+       // Debug.Log(rooms.Count);
     }
 
     public void CreateRoomInSubrooms()
@@ -159,19 +160,29 @@ public class TreeMaker : MonoBehaviour
         {
             count++;
             
-            int bufferW = (int)(div.divisionRect.width - (div.divisionRect.width * roomMaxWidth)); //make a buffer between the maximum width of the room and its parents width;
-            int bufferH = (int)(div.divisionRect.height - (div.divisionRect.height * roomMaxHeight)); //make a buffer between the maximum height of the room and its parents height;
+            int bufferW = (int)(div.divisionRect.width - (div.divisionRect.width * roomMaxWidth/100)); //make a buffer between the maximum width of the room and its parents width;
+            int bufferH = (int)(div.divisionRect.height - (div.divisionRect.height * roomMaxHeight/100)); //make a buffer between the maximum height of the room and its parents height;
 
             //TODO Check if minimum set is less than 0/maximum is greater than the room dimensions. Because that will break the code
 
-            int roomWidth = (int)Random.Range(div.divisionRect.width * roomMinWidth, div.divisionRect.width - bufferW); //choose width between minimum specified width. And maximum possible width;
-            int roomHeight = (int)Random.Range(div.divisionRect.height * roomMinHeight, div.divisionRect.height - bufferH); //choose height between minimum specified height and maximum possible height;
+            int roomWidth = (int)Random.Range(div.divisionRect.width * roomMinWidth/100, div.divisionRect.width - bufferW); //choose width between minimum specified width. And maximum possible width;
+            int roomHeight = (int)Random.Range(div.divisionRect.height * roomMinHeight/100, div.divisionRect.height - bufferH); //choose height between minimum specified height and maximum possible height;
+
+            if(roomWidth > roomMaxWidth/100 * div.divisionRect.width) //if the room width is greater than the max width. Make it the max width
+            {
+                roomWidth = (int) (roomMaxWidth/100 * div.divisionRect.width);
+            }
+
+            if(roomWidth > roomMaxHeight/100 * div.divisionRect.height) //if the room height is greater than the max height. Make it the max height
+            {
+                roomWidth = (int) (roomMaxHeight/100 * div.divisionRect.height);
+            }
             int roomX = (int)Random.Range(div.divisionRect.x, div.divisionRect.x + (div.divisionRect.width - roomWidth));
             int roomY = (int)Random.Range(div.divisionRect.y, div.divisionRect.y + (div.divisionRect.height - roomHeight));
             //Debug.Log($"KEY it {div.divisionRect.x} Yeah yeah yeah and the maximum is ran {roomX} lol {roomY}");
             Rect roomRect = new(roomX, roomY, roomWidth, roomHeight);
             Room room = new Room(roomRect);
-            Debug.Log($"Inputs {roomRect}");
+            //Debug.Log($"Inputs {roomRect}");
             div.containedRoom = room; //make the subroom know what room it has
             rooms.Add(room);
             //Debug.Log(room.rect);
@@ -203,50 +214,92 @@ public class TreeMaker : MonoBehaviour
         //Loop thru the divisions array and find the ID of the parent of the subrooms... easier said than done
 
         List<Subroom> roomsMadeBig = new List<Subroom>();
+        int numPairs = subrooms.Count/2;
 
-        for (int j = 0; j < bigRoomCount; j++)
+        switch(bigRoomGenerationType)
         {
-            int numPairs = subrooms.Count / 2;
+                case BigRoomGenerationType.ByChance:
 
+                    Debug.Log("Doing By Chance");
+                        for(int j = 0; j < divisions.Count; j++)
+                        {   
+                                if (!divisions[j].IAmEndLeaf())
+                                {
+                                    if (divisions[j].leftChild.IAmEndLeaf() && divisions[j].rightChild.IAmEndLeaf() && bigRoomSpawnChance > Random.Range(0, 100)) //if division is the parent of the selected rooms to be combined
+                                    {
+                                        //remove the childs from both divisions and subrooms list, and reinstate parent division as the subroom
+                                        divisions.Remove(divisions[j].leftChild);
+                                        divisions.Remove(divisions[j].rightChild);
+                                        subrooms.Remove(divisions[j].leftChild);
+                                        subrooms.Remove(divisions[j].rightChild);
+                                        roomsMadeBig.Add(divisions[j]);
 
-            Debug.Log(subrooms.Count);
-            int pairToChange = Random.Range(0, numPairs);
-            int idOfLeft = subrooms[pairToChange * 2].debugID;
-            int idOfRight = subrooms[pairToChange * 2 + 1].debugID;
+                                        Debug.Log($"leftID = {divisions[j].leftChild.debugID} and right ID = {divisions[j].rightChild.debugID} and subroom to add is {divisions[j].debugID}");
+                                        //make the childs null so the path drawer won't draw paths because it won't pass the child null check
+                                        divisions[j].leftChild = null;
+                                        divisions[j].rightChild = null;
 
-            Debug.Log(idOfLeft);
-            Debug.Log(idOfRight);
+                                    }
+                                }
+                        }
 
-            for (int i = 0; i < divisions.Count; i++)
-            {
-                if (!divisions[i].IAmEndLeaf())
-                {
-                    if (divisions[i].leftChild.debugID == idOfLeft && divisions[i].rightChild.debugID == idOfRight) //if division is the parent of the selected rooms to be combined
+                    foreach(Subroom bigRoom in roomsMadeBig) //add them on at the end so subrooms is fine
                     {
-                        //remove the childs from both divisions and subrooms list, and reinstate parent division as the subroom
-                        divisions.Remove(divisions[i].leftChild);
-                        divisions.Remove(divisions[i].rightChild);
-                        subrooms.Remove(divisions[i].leftChild);
-                        subrooms.Remove(divisions[i].rightChild);
-                        roomsMadeBig.Add(divisions[i]);
-
-                        Debug.Log($"leftID = {divisions[i].leftChild.debugID} and right ID = {divisions[i].rightChild.debugID} and subroom to add is {divisions[i].debugID}");
-
-                        //make the childs null so the path drawer won't draw paths because it won't pass the child null check
-                        divisions[i].leftChild = null;
-                        divisions[i].rightChild = null;
-
+                        subrooms.Add(bigRoom);
                     }
-                }
-            }
-        }
 
-        foreach(Subroom bigRoom in roomsMadeBig) //add them on at the end so subrooms is fine
-        {
-            subrooms.Add(bigRoom);
-        }
+                break;
 
-        Debug.Log(subrooms.Count);
+                case BigRoomGenerationType.ByCount:
+
+                    for (int i = 0; i < bigRoomCount; i++)
+                    {
+                        //bool canProceed = false;
+                        
+                        numPairs = subrooms.Count/2;
+                        int pairToChange = Random.Range(0, numPairs);
+                        int idOfLeft = subrooms[pairToChange * 2].debugID;
+                        int idOfRight = subrooms[pairToChange * 2 + 1].debugID;
+
+                        //Debug.Log(idOfLeft);
+                        //Debug.Log(idOfRight);
+                        
+                    
+                        for (int j = 0; j < divisions.Count; j++)
+                        {   
+                            if (!divisions[j].IAmEndLeaf())
+                            {   
+                                if (divisions[j].leftChild.debugID == idOfLeft && divisions[j].rightChild.debugID == idOfRight) //if division is the parent of the selected rooms to be combined
+                                {
+                                    //remove the childs from both divisions and subrooms list, and reinstate parent division as the subroom
+                                    divisions.Remove(divisions[j].leftChild);
+                                    divisions.Remove(divisions[j].rightChild);
+                                    subrooms.Remove(divisions[j].leftChild);
+                                    subrooms.Remove(divisions[j].rightChild);
+                                    roomsMadeBig.Add(divisions[j]);
+
+                                    Debug.Log($"leftID = {divisions[j].leftChild.debugID} and right ID = {divisions[j].rightChild.debugID} and subroom to add is {divisions[j].debugID}");
+
+                                    //make the childs null so the path drawer won't draw paths because it won't pass the child null check
+                                    divisions[j].leftChild = null;
+                                    divisions[j].rightChild = null;
+                                }
+                            } 
+                        }
+            
+                    }
+                
+                    foreach(Subroom bigRoom in roomsMadeBig) //add them on at the end so subrooms is fine
+                    {
+                        subrooms.Add(bigRoom);
+                    }
+
+                break;
+        }
+            
+        Debug.Log(roomsMadeBig.Count);
+        Debug.Log("Subroom count is " + subrooms.Count);
+        Debug.Log("");
         
     }
     
@@ -271,7 +324,7 @@ public class TreeMaker : MonoBehaviour
          
         if(parentRoom.divisionRect.width/2 < minDivisionWidth || parentRoom.divisionRect.height/2 < minDivisionHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
         {
-            Debug.Log("Subroom " + parentRoom.debugID + " is a leaf!!");
+           // Debug.Log("Subroom " + parentRoom.debugID + " is a leaf!!");
 
 
             return;
@@ -328,9 +381,8 @@ public class TreeMaker : MonoBehaviour
                 return;
             }
 
-            Debug.Log("The left child of " + parentRoom.divisionRect + " is " + parentRoom.leftChild.divisionRect);
-            Debug.Log("The right child of " + parentRoom.divisionRect + " is " + parentRoom.rightChild.divisionRect);
-            splitCount++;
+            //Debug.Log("The left child of " + parentRoom.divisionRect + " is " + parentRoom.leftChild.divisionRect);
+           // Debug.Log("The right child of " + parentRoom.divisionRect + " is " + parentRoom.rightChild.divisionRect);
             divisions.Add(parentRoom.leftChild);
             divisions.Add(parentRoom.rightChild);
 
@@ -382,7 +434,7 @@ public class TreeMaker : MonoBehaviour
 
         float pathDistance = 0; 
 
-        Debug.Log($"L Point is {lPoint} and right point is {rPoint} //// pathDistance is {pathDistance} and corridorWidth is {corridorWidth}");
+       // Debug.Log($"L Point is {lPoint} and right point is {rPoint} //// pathDistance is {pathDistance} and corridorWidth is {corridorWidth}");
         Rect pathPt1 = new Rect(0,0,0,0);
         Rect pathPt2 = new Rect(0,0,0,0);
 
@@ -485,7 +537,7 @@ public class TreeMaker : MonoBehaviour
             {
                 if (room != null)
                 {
-                    EditorGUI.DrawRect(new Rect(room.rect.x, room.rect.y, room.rect.width, room.rect.height), randomColors[colorIndex]);
+                    EditorGUI.DrawRect(new Rect(room.rect.x, room.rect.y, room.rect.width, room.rect.height), Color.red);
                     colorIndex++;
                 }
             }
