@@ -36,7 +36,7 @@ public class TreeMaker : MonoBehaviour
 
     [Tooltip("Colour of the base (background)")] public Color baseColour;
 
-    [Tooltip("Adjust camera move/zoom speed based on width and height of base")] public bool scaleCameraSpeedByBaseSize;
+    [Tooltip("Adjust camera move/zoom speed based on width and height of base. Otherwise check Main Camera for speed")] public bool scaleCameraSpeedByBaseSize;
    
 
     [Header("Generation Settings")]
