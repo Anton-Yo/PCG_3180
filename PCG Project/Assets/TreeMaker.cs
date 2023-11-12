@@ -33,14 +33,15 @@ public class TreeMaker : MonoBehaviour
     [Tooltip("Y position of the rect containing all of the generated content")] public int startingY = 0;
     [Tooltip("Width of the rect containing all of the generated content. Larger value results in more rooms (if minimum division size is the same)")] public int baseWidth = Screen.width;
 
-    [Tooltip("Height of the rect containing all of the generated content. Larger value results in more rooms (if minimum division size is the same)")]
-    public int baseHeight = Screen.height;
+    [Tooltip("Height of the rect containing all of the generated content. Larger value results in more rooms (if minimum division size is the same)")] public int baseHeight = Screen.height;
+
+    [Tooltip("Colour of the base (background)")] public Color baseColour;
+   
 
     [Header("Generation Settings")]
     
     [Header("Minimum division size. A room is generated based on the division sizes")]
-
-    [Tooltip("Will show the divisions a.k.a the room's parent rather than the rooms")] public bool drawDivs;
+  
     [Tooltip("All divisions and therefore the rooms inside them, will be greater than this width")] public int minDivisionWidth = 100;
 
     [Tooltip("All divisions and therefore the rooms inside them, will be greater than this height")] public int minDivisionHeight = 100;
@@ -64,9 +65,7 @@ public class TreeMaker : MonoBehaviour
     [Header("Corridor Settings")]
     [Tooltip("Width of the corridor")] public int corridorWidth;
 
-    [Tooltip("Colour of the corridors")] public Color corridorColour;
-
-    [Tooltip("Paths are visible over rooms and other debug tools")] public bool drawPathsOverRooms;
+    [Tooltip("Colour of the corridors")] public Color pathColour;
 
     public enum BigRoomGenerationType
     {
@@ -74,12 +73,32 @@ public class TreeMaker : MonoBehaviour
         ByChance,
     };
 
-    [Header("Big room settings: A.k.a Double the size of a normal room")]
+    [Header("Big room settings: A.k.a Double the size of a normal room. NOTE: This will break if big room count > room count/2")]
     [Tooltip("Choose whether the generator goes with manual number of big rooms, or % chance for it to spawn.")] public BigRoomGenerationType bigRoomGenerationType;
     [Tooltip("Number of big rooms. A big room combines two child rooms into one room. The sizes may vary based on the size of the children")] public int bigRoomCount = 1;
 
     private int bigRoomCounter = 0;
     [Tooltip("Chance for a big room to spawn. A big room combines two child rooms into one room. The sizes may vary based on the size of the children")] [Range(0,100)] public float bigRoomSpawnChance = 0.1f;
+
+
+    [Header("Drawing Rectangle Settings")]
+
+    [Header("DebugUI settings")]
+    [Tooltip("Draw Debug UI")] public bool drawDebugUI = false;
+
+    [Tooltip("Will show the divisions a.k.a the room's parent rather than the rooms")] public bool drawDivs;
+
+    [Tooltip("Paths are visible over rooms and other debug tools")] public bool drawPathsOverRooms;
+
+
+    [Header("Unity Script Connections. CAN IGNORE")]
+    public GameObject rectanglePrefab;
+
+    public GameObject roomsParent;
+
+    public GameObject pathsParent;
+
+    public GameObject baseParent;
 
     // Start is called before the first frame update
     void Start()
@@ -96,18 +115,19 @@ public class TreeMaker : MonoBehaviour
         paths = new List<Rect>();
         
         stump = new Subroom(new Rect(startingX, startingY, baseWidth, baseHeight));
+        Debug.Log("Creating base for generator");
+
         divisions.Add(stump);
         CreateDivisions(stump);
-     
-        //generate endleaf list and edit that to make big rooms
+        Debug.Log("Finished creating divisions");
+
         AddRoomsToList(stump);
         MakeBigRooms();
+        Debug.Log("Big divisions created (if any)");
 
         CreateRoomInSubrooms();
-        //Make random colours
-      
-        //Debug.Log("");
-        //CreatePathwayBetween();
+        Debug.Log("Created rooms in all the divisions that are leaves");
+     
         foreach(Subroom div in divisions)
         {
             //Debug.Log(div.divisionRect);
@@ -135,18 +155,16 @@ public class TreeMaker : MonoBehaviour
             }
            
         }
+        Debug.Log("Pathways between rooms created");
 
-        for (int i = 0; i < subrooms.Count; i++)
+        for (int i = 0; i < subrooms.Count; i++)   //Make random colours
         {
             randomColors.Add(Random.ColorHSV(0f, 1f));
         }
-        Debug.Log(randomColors.Count);
-        Debug.Log(subrooms.Count);
-       // Debug.Log("");
-        //Debug.Log(paths.Count);
-        //CreatePathwayBetween(stump.leftChild, stump.rightChild);
+        Debug.Log("Random colours generated for rooms");
 
-       // Debug.Log(rooms.Count);
+        DrawEveryRectangle();
+        Debug.Log("Rectangles were instantiated for everything, paths/base/rooms etc");
     }
 
     public void CreateRoomInSubrooms()
@@ -176,10 +194,8 @@ public class TreeMaker : MonoBehaviour
             }
             int roomX = (int)Random.Range(div.divisionRect.x, div.divisionRect.x + (div.divisionRect.width - roomWidth));
             int roomY = (int)Random.Range(div.divisionRect.y, div.divisionRect.y + (div.divisionRect.height - roomHeight));
-            //Debug.Log($"KEY it {div.divisionRect.x} Yeah yeah yeah and the maximum is ran {roomX} lol {roomY}");
             Rect roomRect = new(roomX, roomY, roomWidth, roomHeight);
             Room room = new Room(roomRect);
-            //Debug.Log($"Inputs {roomRect}");
             div.containedRoom = room; //make the subroom know what room it has
             rooms.Add(room);
             //Debug.Log(room.rect);
@@ -199,6 +215,17 @@ public class TreeMaker : MonoBehaviour
         if(Input.GetButtonDown("Jump"))
         {
             CreateRoomInSubrooms();
+            paths = new List<Rect>();
+            foreach(Subroom div in divisions) //create paths again
+            {
+                if(!div.IAmEndLeaf())
+                {
+                    CreatePathwayBetween(div.leftChild, div.rightChild);
+                }
+           
+            }
+            DrawEveryRectangle(); //draw the new rooms
+     
         }
     }
 
@@ -309,7 +336,7 @@ public class TreeMaker : MonoBehaviour
 
     public void CreateDivisions(Subroom parentRoom)
     {
-         
+        
         if(parentRoom.divisionRect.width/2 <= minDivisionWidth || parentRoom.divisionRect.height/2 <= minDivisionHeight) //Stop recursion if the next room split would make the subsequent rooms smaller than the minimum size
         {
            // Debug.Log("Subroom " + parentRoom.debugID + " is a leaf!!");
@@ -392,7 +419,6 @@ public class TreeMaker : MonoBehaviour
         }
 
 
-
         if(lPoint.x > rPoint.x && splitH)
         {
             Vector2 temp = lPoint;
@@ -415,7 +441,7 @@ public class TreeMaker : MonoBehaviour
 
         if(left.splitH) //Make a horizontal path
         {
-            pathDistance = rPoint.x - lPoint.x;
+            pathDistance = rPoint.x - lPoint.x + corridorWidth/2;
             pathPt1 = new Rect(lPoint.x, lPoint.y - corridorWidth/2, pathDistance, corridorWidth); //directly from midpoint to midpoint
 
                 if(lPoint.y < rPoint.y) //if the path is above the connecting room
@@ -434,10 +460,10 @@ public class TreeMaker : MonoBehaviour
         }
         else //Make a vertical path
         {   
-            pathDistance = rPoint.y - lPoint.y;
+            pathDistance = rPoint.y - lPoint.y + corridorWidth/2;
             pathPt1 = new Rect(lPoint.x - corridorWidth/2, lPoint.y, corridorWidth, pathDistance); //directly from midpoint to midpoint
-            Debug.Log(lPoint);
-            Debug.Log(rPoint);
+            //Debug.Log(lPoint);
+            //Debug.Log(rPoint);
             
             //Do a conjoining path just in case;
                 if(lPoint.x < rPoint.x) //if end of vertical path is to the left of the rPoint
@@ -466,21 +492,106 @@ public class TreeMaker : MonoBehaviour
         
     }
 
+    void DrawEveryRectangle()
+    {
+        //draw base first
+        //then draw paths
+        //then draw rooms
+
+        //delete all objects under parents;
+
+        foreach(Transform child in baseParent.transform)
+        {
+            GameObject.Destroy(child.gameObject);
+        }
+
+        foreach(Transform child in pathsParent.transform)
+        {
+            GameObject.Destroy(child.gameObject);
+        }
+
+        foreach(Transform child in roomsParent.transform)
+        {
+            GameObject.Destroy(child.gameObject);
+        }
+
+
+        GameObject background = Instantiate(rectanglePrefab, baseParent.transform);
+        background.transform.localScale = new Vector3(baseWidth, baseHeight, 1);
+        background.GetComponent<SpriteRenderer>().color = baseColour;
+        background.GetComponent<SpriteRenderer>().sortingOrder = 0;
+        GameObject.Find("Main Camera").GetComponent<CameraMove>().baseGenerated((int)(baseWidth + baseHeight)/2);
+        Vector3 BGPos = background.transform.position;
+        BGPos.x += baseWidth/2;
+        BGPos.y -= baseHeight/2;
+        background.transform.position = BGPos;
+
+        //drawing paths
+
+        for(int i = 0; i < paths.Count; i++)
+        {
+            GameObject path = Instantiate(rectanglePrefab, pathsParent.transform);
+            path.transform.localScale = new Vector3(paths[i].width, paths[i].height, 1);
+            path.GetComponent<SpriteRenderer>().color = pathColour;
+            path.GetComponent<SpriteRenderer>().sortingOrder = 1;
+            Vector3 pathPos = path.transform.localPosition;
+            pathPos.x = paths[i].x + paths[i].width/2;;
+            pathPos.y = -paths[i].y - paths[i].height/2;
+            path.transform.localPosition = pathPos;
+        }  
+    
+        for(int j = 0; j < rooms.Count; j++)
+        {
+            //Debug.Log(subrooms[j].divisionRect);
+            GameObject room = Instantiate(rectanglePrefab, roomsParent.transform);
+            room.transform.localScale = new Vector3(rooms[j].rect.width, rooms[j].rect.height, 1);
+            room.GetComponent<SpriteRenderer>().color = randomColors[j];
+            room.GetComponent<SpriteRenderer>().sortingOrder = 2;
+            Vector3 roomPos = room.transform.localPosition;
+            roomPos.x = rooms[j].rect.x + rooms[j].rect.width/2;
+            //roomPos.x = subrooms[j].divisionRect.width/2;
+            roomPos.y = -rooms[j].rect.y - rooms[j].rect.height/2;
+            //subrooms[j].divisionRect.height/2;
+            room.transform.localPosition = roomPos;
+
+        }
+
+        // for(int j = 0; j < subrooms.Count; j++)
+        // {
+        //     Debug.Log(subrooms[j].divisionRect);
+        //     GameObject subroom = Instantiate(rectanglePrefab, roomsParent.transform);
+        //     subroom.transform.localScale = new Vector3(subrooms[j].divisionRect.width, subrooms[j].divisionRect.height, 1);
+        //     subroom.GetComponent<SpriteRenderer>().color = randomColors[j];
+        //     subroom.GetComponent<SpriteRenderer>().sortingOrder = 3;
+        //     Vector3 roomPos = subroom.transform.localPosition;
+        //     roomPos.x = subrooms[j].divisionRect.x + subrooms[j].divisionRect.width/2;
+        //     //roomPos.x = subrooms[j].divisionRect.width/2;
+        //     roomPos.y = -subrooms[j].divisionRect.y - subrooms[j].divisionRect.height/2;
+        //     //subrooms[j].divisionRect.height/2;
+        //     subroom.transform.localPosition = roomPos;
+
+        // }
+
+    }
+
     void OnGUI()
     {
         //Draw the background
+       if(drawDebugUI)
+       {
+          
        
         int colorIndex = 0;
         if(stump != null)
         {
-            EditorGUI.DrawRect(new Rect(stump.divisionRect.x, stump.divisionRect.y, stump.divisionRect.width, stump.divisionRect.height), Color.white);
+            EditorGUI.DrawRect(new Rect(stump.divisionRect.x, stump.divisionRect.y, stump.divisionRect.width, stump.divisionRect.height), baseColour);
         }
 
         if(!drawPathsOverRooms) //Draw normally, unless debug draw mode is on
         {
             foreach(Rect path in paths)
             {
-                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), corridorColour);
+                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), pathColour);
             }
             colorIndex = 0;
 
@@ -530,9 +641,10 @@ public class TreeMaker : MonoBehaviour
 
             foreach(Rect path in paths)
             {
-                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), corridorColour);
+                EditorGUI.DrawRect(new Rect(path.x, path.y, path.width, path.height), pathColour);
             }
         }
+       }
 
     }
 
