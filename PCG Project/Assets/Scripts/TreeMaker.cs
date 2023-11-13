@@ -41,11 +41,11 @@ public class TreeMaker : MonoBehaviour
 
     [Header("Generation Settings")]
     
-    [Header("Minimum division size. A room is generated based on the division sizes")]
+    [Header("Minimum division size. A room is generated based on the division sizes. Making sure minimum size >= base size/2 is best")]
   
-    [Tooltip("All divisions and therefore the rooms inside them, will be greater than this width")] public int minDivisionWidth = 100;
+    [Tooltip("All divisions, will be greater than this width. Rooms will be bigger than a percentage of this")] public int minDivisionWidth = 100;
 
-    [Tooltip("All divisions and therefore the rooms inside them, will be greater than this height")] public int minDivisionHeight = 100;
+    [Tooltip("All divisions, will be greater than this height. Rooms will be bigger than a percentage of this")] public int minDivisionHeight = 100;
 
 
     [Header("Room Settings"), Header("Room will fill a random range between min% and max% of the divisions width and height."), Space(-5), Header("E.g with min values of 40 and max values of 80, a room will occupy 40%-80% of the division's space")]

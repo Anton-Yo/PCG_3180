@@ -745,7 +745,7 @@ MonoBehaviour:
   corridorWidth: 5
   pathColour: {r: 1, g: 0, b: 0, a: 1}
   bigRoomGenerationType: 0
-  bigRoomCount: 1
+  bigRoomCount: 0
   bigRoomSpawnChance: 0
   drawDivisions: 0
   drawOrder:
